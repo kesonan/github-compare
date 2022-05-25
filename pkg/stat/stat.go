@@ -27,6 +27,7 @@ package stat
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -62,6 +63,9 @@ type (
 
 func NewStat(repo string, accessToken ...string) *Stat {
 	token := getAccessToken(accessToken...)
+	if len(token) == 0 {
+		log.Fatalln("missing access token")
+	}
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	httpClient := oauth2.NewClient(ctx, ts)
