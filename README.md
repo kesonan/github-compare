@@ -11,7 +11,7 @@ $ go install github.com/anqiansong/github-compare
 
 ## Example
 ```bash
-$ github-compare zeromicro/go-zero go-kratos/kratos micro/micro go-kit/kit
+$ github-compare zeromicro/go-zero go-kratos/kratos asim/go-micro go-kit/kit
 ```
 ![preview](./resource/compare-preview.png)
 
