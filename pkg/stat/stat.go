@@ -66,12 +66,14 @@ func NewStat(repo string, accessToken ...string) *Stat {
 	if len(token) == 0 {
 		log.Fatalln("missing access token")
 	}
+
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	httpClient := oauth2.NewClient(ctx, ts)
 	splits := strings.Split(repo, "/")
 	graphqlClient := githubv4.NewClient(httpClient)
 	restClient := github.NewClient(httpClient)
+
 	return &Stat{owner: splits[0], repo: splits[1], graphqlClient: graphqlClient,
 		restClient: restClient, ctx: context.Background()}
 }
@@ -89,6 +91,7 @@ func getAccessToken(accessToken ...string) string {
 			return e
 		}
 	}
+
 	return os.Getenv("GITHUB_ACCESS_TOKEN")
 }
 
@@ -97,6 +100,7 @@ func formatPeriod(duration time.Duration) string {
 		return "N/A"
 	}
 	hours := duration.Hours()
+
 	return fmt.Sprintf("%d days", int(hours/float64(24)))
 }
 
@@ -104,23 +108,24 @@ func formatDuration(at time.Time) string {
 	if at.IsZero() {
 		return "N/A"
 	}
+
 	duration := time.Since(at)
 	hours := int(duration.Hours())
 	minutes := int(duration.Minutes())
+
 	if hours == 0 && minutes == 0 && duration.Seconds() < float64(60) {
 		return fmt.Sprintf("%v seconds(s) ago", int(duration.Seconds()))
 	}
-	if hours < hour {
+	switch {
+	case hours < hour:
 		return fmt.Sprintf("%v minute(s) ago", minutes)
-	}
-	if hours < day {
+	case hours < day:
 		return fmt.Sprintf("%v hour(s) ago", hours)
-	}
-	if hours < month {
+	case hours < month:
 		return fmt.Sprintf("%v day(s) ago", hours/day)
-	}
-	if hours < year {
+	case hours < year:
 		return fmt.Sprintf("%v month(s) ago", hours/month)
+	default:
+		return at.Format("2006-01-02")
 	}
-	return at.Format("2006-01-02")
 }

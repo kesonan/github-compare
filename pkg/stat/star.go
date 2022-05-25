@@ -82,6 +82,7 @@ func (s StargazerEdges) LatestWeekStars() (int, int) {
 			starsOfPre7Days += 1
 		}
 	}
+
 	return starsOfLatest7Days, starsOfLatest7Days - starsOfPre7Days
 }
 
@@ -90,12 +91,14 @@ func (s StargazerEdges) LatestMonthStars() int {
 }
 
 func (s Stat) latestMonthStargazers() StargazerEdges {
-	deadline := time.Now().AddDate(0, -1, 0)
 	var (
-		list  []StargazerEdge
-		brk   bool
-		after githubv4.String
+		list           []StargazerEdge
+		brk            bool
+		after          githubv4.String
+		stargazerQuery StargazerQuery
 	)
+
+	deadline := time.Now().AddDate(0, -1, 0)
 	arg := map[string]interface{}{
 		"after": (*githubv4.String)(nil),
 		"owner": githubv4.String(s.owner),
@@ -105,10 +108,11 @@ func (s Stat) latestMonthStargazers() StargazerEdges {
 			Direction: githubv4.OrderDirectionDesc,
 		},
 	}
-	var stargazerQuery StargazerQuery
+
 	for {
 		_ = s.graphqlClient.Query(s.ctx, &stargazerQuery, arg)
 		temp := stargazerQuery.Stargazer.Stargazers.Edges
+
 		for _, e := range temp {
 			if e.StarredAt.Time.Before(deadline) {
 				brk = true
@@ -119,8 +123,10 @@ func (s Stat) latestMonthStargazers() StargazerEdges {
 		if brk || !(bool)(stargazerQuery.Stargazer.Stargazers.PageInfo.HasNextPage) || len(temp) == 0 {
 			break
 		}
+
 		after = temp[len(temp)-1].Cursor
 		arg["after"] = after
 	}
+
 	return list
 }

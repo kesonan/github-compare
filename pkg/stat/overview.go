@@ -90,6 +90,7 @@ func Overview(accessToken string, repos ...string) []Data {
 		avgReleasePeriod := time.Duration(0)
 		ageDuration := time.Since(repo.CreatedAt.Time)
 		ageDays := int(ageDuration.Hours() / 24)
+
 		if releaseCount > 0 {
 			avgReleasePeriod = ageDuration / time.Duration(releaseCount)
 		}
@@ -119,6 +120,7 @@ func Overview(accessToken string, repos ...string) []Data {
 			ContributorCount:     formatValue(contributorCount),
 			Homepage:             repo.HomepageUrl.String(),
 		})
+
 		writer.Write(list)
 	}, func(pipe <-chan []Data, writer mapreduce.Writer[[]Data], cancel func(error)) {
 		var list []Data
@@ -139,6 +141,7 @@ func Overview(accessToken string, repos ...string) []Data {
 			list = append(list, data)
 		}
 	}
+
 	return list
 }
 
@@ -149,6 +152,7 @@ func formatValue(v interface{}) string {
 func formatStarTrend(stars, trend int) string {
 	var trendEmoji string
 	c := color.New(color.FgHiWhite)
+
 	switch {
 	case trend < 0:
 		c.Add(color.BgHiRed)
@@ -159,5 +163,6 @@ func formatStarTrend(stars, trend int) string {
 	default:
 		trendEmoji = ""
 	}
+
 	return fmt.Sprintf("%d %s", stars, trendEmoji)
 }

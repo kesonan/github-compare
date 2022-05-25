@@ -49,5 +49,6 @@ func (s Stat) OpenIssueCount() githubv4.Int {
 		"name":        githubv4.String(s.repo),
 		"issueStates": []githubv4.IssueState{githubv4.IssueStateOpen},
 	})
+
 	return issueQuery.Issue.Issues.TotalCount
 }

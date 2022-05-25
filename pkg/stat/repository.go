@@ -65,5 +65,6 @@ func (s Stat) Repository() Repository {
 		"pullRequestStates": []githubv4.PullRequestState{githubv4.PullRequestStateOpen,
 			githubv4.PullRequestStateClosed, githubv4.PullRequestStateMerged},
 	})
+
 	return repositoryQuery.Repository
 }

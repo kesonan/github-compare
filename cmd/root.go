@@ -37,7 +37,8 @@ const codeFailure = 1
 
 var (
 	githubAccessToken string
-	rootCmd           = &cobra.Command{
+
+	rootCmd = &cobra.Command{
 		Use:   "github-compare",
 		Short: "A cli tool to compare two github repositories",
 		Args:  cobra.RangeArgs(1, 4),
@@ -45,10 +46,12 @@ var (
 			if err := validateGithubRepo(args...); err != nil {
 				return err
 			}
+
 			s := spinner.New(spinner.CharSets[14], 100*time.Millisecond) // Build our new spinner
 			s.Suffix = " Loading..."
 			s.Start() // Start the spinner
 			data := stat.Overview(githubAccessToken, args...)
+
 			return render(s, data...)
 		},
 	}

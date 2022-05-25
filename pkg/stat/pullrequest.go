@@ -49,5 +49,6 @@ func (s Stat) OpenPullRequestCount() githubv4.Int {
 		"name":              githubv4.String(s.repo),
 		"pullRequestStates": []githubv4.PullRequestState{githubv4.PullRequestStateOpen},
 	})
+
 	return prQuery.PullRequest.PullRequests.TotalCount
 }
