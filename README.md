@@ -2,6 +2,8 @@
 
 A Command-line tool to statistics the GitHub repositories
 
+![banner](./resource/banner.png)
+
 ## Install
 
 ```bash
