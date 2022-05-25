@@ -54,9 +54,8 @@ type (
 )
 
 func (s StargazerEdges) LatestDayStars() (int, int) {
-	y, m, d := time.Now().Date()
-	deadlineOfToday := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
-	deadlineOfYesterday := deadlineOfToday.AddDate(0, 0, -1)
+	deadlineOfToday := time.Now().Add(-time.Hour * 24)
+	deadlineOfYesterday := deadlineOfToday.Add(-time.Hour * 24)
 	var starsOfToday, starsOfYesterday int
 	for _, e := range s {
 		if e.StarredAt.Time.After(deadlineOfToday) {

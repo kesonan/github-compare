@@ -6,7 +6,7 @@ A Command-line tool to statistics the GitHub repositories
 ## Install
 
 ```bash
-$ go install github.com/anqiansong/github-compare
+$ go install github.com/anqiansong/github-compare@latest
 ```
 
 ## Example
