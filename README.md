@@ -1,8 +1,7 @@
-# github-compare
-
-A Command-line tool to statistics the GitHub repositories
-
 ![banner](./resource/banner.png)
+
+# github-compare
+A Command-line tool to statistics the GitHub repositories
 
 ## Install
 
