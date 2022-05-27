@@ -188,14 +188,15 @@ func formatStarTrend(stars, trend int, renderColor bool) string {
 		if !renderColor {
 			trendEmoji = "⇊"
 		} else {
+			c.Add(color.FgHiRed)
 			starStr = c.Sprintf("%d", stars)
 			trendEmoji = c.Sprintf("⇊")
 		}
 	case trend > 0:
-		c.Add(color.FgHiGreen)
 		if !renderColor {
 			trendEmoji = "⇈"
 		} else {
+			c.Add(color.FgHiGreen)
 			starStr = c.Sprintf("%d", stars)
 			trendEmoji = c.Sprintf("⇈")
 		}
