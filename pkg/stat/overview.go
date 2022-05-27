@@ -1,26 +1,24 @@
-/*
- * MIT License
- *
- * Copyright (c) 2022 anqiansong
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+// MIT License
+//
+// Copyright (c) 2022 anqiansong
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 package stat
 
@@ -28,6 +26,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/fatih/color"
 	"github.com/kevwan/mapreduce/v2"
 	"github.com/shurcooL/githubv4"
@@ -117,10 +116,11 @@ func Overview(accessToken string, renderColor bool, repos ...string) []Data {
 			LatestMonthStarCount: formatValue(latestMonthStargazers.LatestMonthStars()),
 			ForkCount:            fmt.Sprintf("%d(%d/d)", totalForkCount, avgForkCount),
 			WatcherCount:         formatValue(repo.Watchers.TotalCount),
-			Language:             formatValue(repo.PrimaryLanguage.Name),
-			Issue:                fmt.Sprintf("%d/%d", openIssueCount, repo.Issues.TotalCount),
-			Pull:                 fmt.Sprintf("%d/%d", openPrCount, repo.PullRequests.TotalCount),
-			License:              formatValue(repo.LicenseInfo.Name),
+			Language: formatLanguage(repo.PrimaryLanguage.Name,
+				repo.PrimaryLanguage.Color, renderColor),
+			Issue:   fmt.Sprintf("%d/%d", openIssueCount, repo.Issues.TotalCount),
+			Pull:    fmt.Sprintf("%d/%d", openPrCount, repo.PullRequests.TotalCount),
+			License: formatValue(repo.LicenseInfo.Name),
 			Age: formatPeriod(func() time.Duration {
 				if repo.CreatedAt.IsZero() {
 					return 0
@@ -168,16 +168,27 @@ func formatValue(v interface{}) string {
 	return ret
 }
 
-func formatStarTrend(stars, trend int, renderColor bool) string {
-	var trendEmoji string
-	c := color.New()
+func formatLanguage(lang, color githubv4.String, renderColor bool) string {
+	if len(lang) == 0 {
+		return "N/A"
+	}
+	if !renderColor {
+		return string(lang)
+	}
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(color)).Render(fmt.Sprintf("%s %s", "◉",
+		lang))
+}
 
+func formatStarTrend(stars, trend int, renderColor bool) string {
+	var trendEmoji, starStr string
+	c := color.New()
+	starStr = fmt.Sprintf("%d", stars)
 	switch {
 	case trend < 0:
-		c.Add(color.FgHiRed)
 		if !renderColor {
 			trendEmoji = "⇊"
 		} else {
+			starStr = c.Sprintf("%d", stars)
 			trendEmoji = c.Sprintf("⇊")
 		}
 	case trend > 0:
@@ -185,11 +196,12 @@ func formatStarTrend(stars, trend int, renderColor bool) string {
 		if !renderColor {
 			trendEmoji = "⇈"
 		} else {
+			starStr = c.Sprintf("%d", stars)
 			trendEmoji = c.Sprintf("⇈")
 		}
 	default:
 		trendEmoji = ""
 	}
 
-	return fmt.Sprintf("%d %s", stars, trendEmoji)
+	return fmt.Sprintf("%s %s", starStr, trendEmoji)
 }
