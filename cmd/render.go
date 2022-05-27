@@ -30,21 +30,31 @@ import (
 	"fmt"
 
 	"github.com/anqiansong/github-compare/pkg/stat"
-	"github.com/briandowns/spinner"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
-func render(spinner *spinner.Spinner, list ...stat.Data) error {
-	spinner.Stop()
-	data, err := convert2ViperList(list)
-	if err != nil {
-		return err
-	}
+func render(printStyle style, list ...stat.Data) error {
+	var prettyText string
+	switch printStyle {
+	case styleJSON:
+		data, _ := json.MarshalIndent(list, "", "  ")
+		prettyText = string(data)
+	case styleYAML:
+		data, _ := yaml.Marshal(list)
+		prettyText = string(data)
+	default:
+		data, err := convert2ViperList(list)
+		if err != nil {
+			return err
+		}
 
-	t := createTable(data, true)
-	t.SetStyle(table.StyleLight)
-	fmt.Println(t.Render())
+		t := createTable(data, true)
+		t.SetStyle(table.StyleLight)
+		prettyText = t.Render()
+	}
+	fmt.Println(prettyText)
 	return nil
 }
 

@@ -70,8 +70,8 @@ func (s StargazerEdges) LatestDayStars() (int, int) {
 }
 
 func (s StargazerEdges) LatestWeekStars() (int, int) {
-	deadlineOfLatest7Days := time.Now().AddDate(0, 0, -7)
-	deadlineOfPre7Days := deadlineOfLatest7Days.AddDate(0, 0, -7)
+	deadlineOfLatest7Days := time.Now().Add(-7 * 24 * time.Hour)
+	deadlineOfPre7Days := deadlineOfLatest7Days.Add(-7 * 24 * time.Hour)
 	var starsOfLatest7Days, starsOfPre7Days int
 	for _, e := range s {
 		if e.StarredAt.Time.After(deadlineOfLatest7Days) {
@@ -97,7 +97,7 @@ func (s Stat) latestMonthStargazers() StargazerEdges {
 		stargazerQuery StargazerQuery
 	)
 
-	deadline := time.Now().AddDate(0, -1, 0)
+	deadline := time.Now().Add(-30 * 24 * time.Hour)
 	arg := map[string]interface{}{
 		"after": (*githubv4.String)(nil),
 		"owner": githubv4.String(s.owner),

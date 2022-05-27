@@ -26,6 +26,8 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/anqiansong/github-compare/pkg/stat"
@@ -37,29 +39,66 @@ const codeFailure = 1
 
 var (
 	githubAccessToken string
+	jsonStyle         bool
+	tableStyle        bool
+	yamlStyle         bool
 
 	rootCmd = &cobra.Command{
 		Use:   "github-compare",
 		Short: "A cli tool to compare two github repositories",
 		Args:  cobra.RangeArgs(1, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			s := spinner.New(spinner.CharSets[14], 100*time.Millisecond) // Build our new spinner
-			s.Suffix = " Loading..."
-			s.Start() // Start the spinner
+			if err := validateGithubRepo(args...); err != nil {
+				return err
+			}
 
-			data, err := checkAndGet(s, true, args...)
+			printStyle := styleTable
+			if jsonStyle {
+				printStyle = styleJSON
+			} else if yamlStyle {
+				printStyle = styleYAML
+			}
+
+			data, err := getData(printStyle == styleTable && len(outputFile) == 0, args...)
 			if err != nil {
 				return err
 			}
-			return render(s, data...)
+
+			if len(outputFile) > 0 {
+				tp := getExportType(outputFile, printStyle)
+				return export(data, tp)
+			}
+
+			return render(printStyle, data...)
 		},
 	}
 )
 
+func getExportType(outputFile string, printStyle style) string {
+	ext := strings.TrimPrefix(filepath.Ext(outputFile), ".")
+	switch strings.ToLower(ext) {
+	case "json":
+		return exportTPJSON
+	case "yaml", "yml":
+		return exportTPYAML
+	case "csv":
+		return exportTPCSV
+	default:
+		if printStyle != styleTable {
+			return string(printStyle)
+		}
+		return exportTPJSON
+	}
+}
+
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&githubAccessToken, "token", "t", "",
 		"github access token")
-	rootCmd.AddCommand(exportCmd)
+	rootCmd.PersistentFlags().BoolVar(&tableStyle, "table", true,
+		"print with table style(default)")
+	rootCmd.PersistentFlags().BoolVar(&jsonStyle, "json", false, "print with json style")
+	rootCmd.PersistentFlags().BoolVar(&yamlStyle, "yaml", false, "print with yaml style")
+	rootCmd.PersistentFlags().StringVarP(&outputFile, "file", "f", "", "output to a specified file")
 }
 
 func Execute() {
@@ -68,11 +107,10 @@ func Execute() {
 	}
 }
 
-func checkAndGet(s *spinner.Spinner, renderColor bool, args ...string) ([]stat.Data, error) {
-	if err := validateGithubRepo(args...); err != nil {
-		return nil, err
-	}
-
+func getData(renderColor bool, args ...string) ([]stat.Data, error) {
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond) // Build our new spinner
+	s.Suffix = " Loading..."
+	s.Start() // Start the spinner
 	data := stat.Overview(githubAccessToken, renderColor, args...)
 	s.Stop()
 	return data, nil

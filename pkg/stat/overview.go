@@ -170,22 +170,22 @@ func formatValue(v interface{}) string {
 
 func formatStarTrend(stars, trend int, renderColor bool) string {
 	var trendEmoji string
-	c := color.New(color.FgHiWhite)
+	c := color.New()
 
 	switch {
 	case trend < 0:
-		c.Add(color.BgHiRed)
+		c.Add(color.FgHiRed)
 		if !renderColor {
-			trendEmoji = "(down)"
+			trendEmoji = "⇊"
 		} else {
-			trendEmoji = c.Sprintf("(down)")
+			trendEmoji = c.Sprintf("⇊")
 		}
 	case trend > 0:
-		c.Add(color.BgHiGreen)
+		c.Add(color.FgHiGreen)
 		if !renderColor {
-			trendEmoji = "(up)"
+			trendEmoji = "⇈"
 		} else {
-			trendEmoji = c.Sprintf("(up)")
+			trendEmoji = c.Sprintf("⇈")
 		}
 	default:
 		trendEmoji = ""

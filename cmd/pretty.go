@@ -24,58 +24,10 @@
 
 package cmd
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"path/filepath"
-
-	"github.com/anqiansong/github-compare/pkg/stat"
-	"gopkg.in/yaml.v3"
-)
+type style string
 
 const (
-	exportTPJSON = "json"
-	exportTPYAML = "yaml"
-	exportTPCSV  = "csv"
+	styleJSON  style = "json"
+	styleYAML  style = "yaml"
+	styleTable style = "table"
 )
-
-var outputFile string
-
-func export(data []stat.Data, tp string) error {
-	var buffer bytes.Buffer
-	switch tp {
-	case exportTPJSON:
-		marshal, _ := json.MarshalIndent(data, "", "  ")
-		buffer.Write(marshal)
-	case exportTPYAML:
-		marshal, _ := yaml.Marshal(data)
-		buffer.Write(marshal)
-	case exportTPCSV:
-		list, err := convert2ViperList(data)
-		if err != nil {
-			return err
-		}
-		t := createTable(list, false)
-		buffer.WriteString(t.RenderCSV())
-	default:
-		return fmt.Errorf("invalid type %q", tp)
-	}
-
-	return outputOrPrint(outputFile, buffer)
-}
-
-func outputOrPrint(file string, buffer bytes.Buffer) error {
-	if len(file) == 0 {
-		fmt.Println(buffer.String())
-		return nil
-	}
-
-	abs, err := filepath.Abs(file)
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(abs, buffer.Bytes(), 0666)
-}
