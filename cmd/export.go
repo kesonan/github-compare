@@ -20,16 +20,60 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package stat
+package cmd
 
-import "github.com/google/go-github/v44/github"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"path/filepath"
 
-func (s Stat) ContributorCount() int {
-	listOpt := &github.ListContributorsOptions{
-		Anon:        "true",
-		ListOptions: github.ListOptions{Page: 1, PerPage: 1},
+	"github.com/anqiansong/github-compare/pkg/stat"
+	"gopkg.in/yaml.v3"
+)
+
+const (
+	exportTPJSON = "json"
+	exportTPYAML = "yaml"
+	exportTPCSV  = "csv"
+)
+
+var outputFile string
+
+func export(data []stat.Data, tp string) error {
+	var buffer bytes.Buffer
+	switch tp {
+	case exportTPJSON:
+		marshal, _ := json.MarshalIndent(data, "", "  ")
+		buffer.Write(marshal)
+	case exportTPYAML:
+		marshal, _ := yaml.Marshal(data)
+		buffer.Write(marshal)
+	case exportTPCSV:
+		list, err := convert2ViperList(data)
+		if err != nil {
+			return err
+		}
+		t := createTable(list, false)
+		buffer.WriteString(t.RenderCSV())
+	default:
+		return fmt.Errorf("invalid type %q", tp)
 	}
 
-	_, resp, _ := s.restClient.Repositories.ListContributors(s.ctx, s.owner, s.repo, listOpt)
-	return s.GetTotal(resp)
+	return outputOrPrint(outputFile, buffer)
+}
+
+func outputOrPrint(file string, buffer bytes.Buffer) error {
+	if len(file) == 0 {
+		fmt.Println(buffer.String())
+		return nil
+	}
+
+	abs, err := filepath.Abs(file)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(abs, buffer.Bytes(), 0666)
 }

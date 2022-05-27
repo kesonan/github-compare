@@ -1,26 +1,24 @@
-/*
- * MIT License
- *
- * Copyright (c) 2022 anqiansong
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+// MIT License
+//
+// Copyright (c) 2022 anqiansong
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 package stat
 
@@ -28,6 +26,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/fatih/color"
 	"github.com/kevwan/mapreduce/v2"
 	"github.com/shurcooL/githubv4"
@@ -55,7 +54,7 @@ type Data struct {
 	WatcherCount         string `json:"watcherCount,omitempty"`
 }
 
-func Overview(accessToken string, repos ...string) []Data {
+func Overview(accessToken string, renderColor bool, repos ...string) []Data {
 	reduce, _ := mapreduce.MapReduce(func(source chan<- *Stat) {
 		for _, r := range repos {
 			s := NewStat(r, accessToken)
@@ -82,6 +81,10 @@ func Overview(accessToken string, repos ...string) []Data {
 			latestMonthStargazers = s.latestMonthStargazers()
 		})
 
+		homePage := ""
+		if repo.HomepageUrl.URL != nil {
+			homePage = repo.HomepageUrl.URL.String()
+		}
 		releaseCount := repo.Releases.TotalCount
 		totalStarCount := int(repo.StargazerCount)
 		avgStarCount := totalStarCount
@@ -100,25 +103,37 @@ func Overview(accessToken string, repos ...string) []Data {
 		}
 
 		list = append(list, Data{
-			FullName:             formatValue(repo.NameWithOwner),
-			StarCount:            fmt.Sprintf("%d(%d/d)", totalStarCount, avgStarCount),
-			LatestDayStarCount:   formatStarTrend(latestMonthStargazers.LatestDayStars()),
-			LatestWeekStarCount:  formatStarTrend(latestMonthStargazers.LatestWeekStars()),
+			FullName:  fmt.Sprintf("%s/%s", s.owner, s.repo),
+			StarCount: fmt.Sprintf("%d(%d/d)", totalStarCount, avgStarCount),
+			LatestDayStarCount: formatStarTrend(func() (int, int, bool) {
+				stars, trend := latestMonthStargazers.LatestDayStars()
+				return stars, trend, renderColor
+			}()),
+			LatestWeekStarCount: formatStarTrend(func() (int, int, bool) {
+				stars, trend := latestMonthStargazers.LatestWeekStars()
+				return stars, trend, renderColor
+			}()),
 			LatestMonthStarCount: formatValue(latestMonthStargazers.LatestMonthStars()),
 			ForkCount:            fmt.Sprintf("%d(%d/d)", totalForkCount, avgForkCount),
 			WatcherCount:         formatValue(repo.Watchers.TotalCount),
-			Language:             formatValue(repo.PrimaryLanguage.Name),
-			Issue:                fmt.Sprintf("%d/%d", openIssueCount, repo.Issues.TotalCount),
-			Pull:                 fmt.Sprintf("%d/%d", openPrCount, repo.PullRequests.TotalCount),
-			License:              formatValue(repo.LicenseInfo.Name),
-			Age:                  formatPeriod(time.Since(repo.CreatedAt.Time)),
-			LastPushedAt:         formatDuration(repo.PushedAt.Time),
-			LastUpdatedAt:        formatDuration(repo.UpdatedAt.Time),
-			LatestReleaseAt:      formatDuration(repo.LatestRelease.PublishedAt.Time),
-			ReleaseCount:         formatValue(repo.Releases.TotalCount),
-			AvgReleasePeriod:     formatPeriod(avgReleasePeriod),
-			ContributorCount:     formatValue(contributorCount),
-			Homepage:             repo.HomepageUrl.String(),
+			Language: formatLanguage(repo.PrimaryLanguage.Name,
+				repo.PrimaryLanguage.Color, renderColor),
+			Issue:   fmt.Sprintf("%d/%d", openIssueCount, repo.Issues.TotalCount),
+			Pull:    fmt.Sprintf("%d/%d", openPrCount, repo.PullRequests.TotalCount),
+			License: formatValue(repo.LicenseInfo.Name),
+			Age: formatPeriod(func() time.Duration {
+				if repo.CreatedAt.IsZero() {
+					return 0
+				}
+				return time.Since(repo.CreatedAt.Time)
+			}()),
+			LastPushedAt:     formatDuration(repo.PushedAt.Time),
+			LastUpdatedAt:    formatDuration(repo.UpdatedAt.Time),
+			LatestReleaseAt:  formatDuration(repo.LatestRelease.PublishedAt.Time),
+			ReleaseCount:     formatValue(repo.Releases.TotalCount),
+			AvgReleasePeriod: formatPeriod(avgReleasePeriod),
+			ContributorCount: formatValue(contributorCount),
+			Homepage:         homePage,
 		})
 
 		writer.Write(list)
@@ -146,23 +161,48 @@ func Overview(accessToken string, repos ...string) []Data {
 }
 
 func formatValue(v interface{}) string {
-	return fmt.Sprintf("%v", v)
+	ret := fmt.Sprintf("%v", v)
+	if len(ret) == 0 {
+		return "N/A"
+	}
+	return ret
 }
 
-func formatStarTrend(stars, trend int) string {
-	var trendEmoji string
-	c := color.New(color.FgHiWhite)
+func formatLanguage(lang, color githubv4.String, renderColor bool) string {
+	if len(lang) == 0 {
+		return "N/A"
+	}
+	if !renderColor {
+		return string(lang)
+	}
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(color)).Render(fmt.Sprintf("%s %s", "◉",
+		lang))
+}
 
+func formatStarTrend(stars, trend int, renderColor bool) string {
+	var trendEmoji, starStr string
+	c := color.New()
+	starStr = fmt.Sprintf("%d", stars)
 	switch {
 	case trend < 0:
-		c.Add(color.BgHiRed)
-		trendEmoji = c.Sprintf("(down)")
+		if !renderColor {
+			trendEmoji = "⇊"
+		} else {
+			c.Add(color.FgHiRed)
+			starStr = c.Sprintf("%d", stars)
+			trendEmoji = c.Sprintf("⇊")
+		}
 	case trend > 0:
-		c.Add(color.BgHiGreen)
-		trendEmoji = c.Sprintf("(up)")
+		if !renderColor {
+			trendEmoji = "⇈"
+		} else {
+			c.Add(color.FgHiGreen)
+			starStr = c.Sprintf("%d", stars)
+			trendEmoji = c.Sprintf("⇈")
+		}
 	default:
 		trendEmoji = ""
 	}
 
-	return fmt.Sprintf("%d %s", stars, trendEmoji)
+	return fmt.Sprintf("%s %s", starStr, trendEmoji)
 }
