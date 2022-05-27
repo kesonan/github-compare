@@ -43,15 +43,14 @@ var (
 		Short: "A cli tool to compare two github repositories",
 		Args:  cobra.RangeArgs(1, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := validateGithubRepo(args...); err != nil {
-				return err
-			}
-
 			s := spinner.New(spinner.CharSets[14], 100*time.Millisecond) // Build our new spinner
 			s.Suffix = " Loading..."
 			s.Start() // Start the spinner
-			data := stat.Overview(githubAccessToken, args...)
 
+			data, err := checkAndGet(s, true, args...)
+			if err != nil {
+				return err
+			}
 			return render(s, data...)
 		},
 	}
@@ -60,10 +59,21 @@ var (
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&githubAccessToken, "token", "t", "",
 		"github access token")
+	rootCmd.AddCommand(exportCmd)
 }
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(codeFailure)
 	}
+}
+
+func checkAndGet(s *spinner.Spinner, renderColor bool, args ...string) ([]stat.Data, error) {
+	if err := validateGithubRepo(args...); err != nil {
+		return nil, err
+	}
+
+	data := stat.Overview(githubAccessToken, renderColor, args...)
+	s.Stop()
+	return data, nil
 }

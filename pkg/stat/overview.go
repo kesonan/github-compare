@@ -55,7 +55,7 @@ type Data struct {
 	WatcherCount         string `json:"watcherCount,omitempty"`
 }
 
-func Overview(accessToken string, repos ...string) []Data {
+func Overview(accessToken string, renderColor bool, repos ...string) []Data {
 	reduce, _ := mapreduce.MapReduce(func(source chan<- *Stat) {
 		for _, r := range repos {
 			s := NewStat(r, accessToken)
@@ -82,6 +82,10 @@ func Overview(accessToken string, repos ...string) []Data {
 			latestMonthStargazers = s.latestMonthStargazers()
 		})
 
+		homePage := ""
+		if repo.HomepageUrl.URL != nil {
+			homePage = repo.HomepageUrl.URL.String()
+		}
 		releaseCount := repo.Releases.TotalCount
 		totalStarCount := int(repo.StargazerCount)
 		avgStarCount := totalStarCount
@@ -100,10 +104,16 @@ func Overview(accessToken string, repos ...string) []Data {
 		}
 
 		list = append(list, Data{
-			FullName:             formatValue(repo.NameWithOwner),
-			StarCount:            fmt.Sprintf("%d(%d/d)", totalStarCount, avgStarCount),
-			LatestDayStarCount:   formatStarTrend(latestMonthStargazers.LatestDayStars()),
-			LatestWeekStarCount:  formatStarTrend(latestMonthStargazers.LatestWeekStars()),
+			FullName:  fmt.Sprintf("%s/%s", s.owner, s.repo),
+			StarCount: fmt.Sprintf("%d(%d/d)", totalStarCount, avgStarCount),
+			LatestDayStarCount: formatStarTrend(func() (int, int, bool) {
+				stars, trend := latestMonthStargazers.LatestDayStars()
+				return stars, trend, renderColor
+			}()),
+			LatestWeekStarCount: formatStarTrend(func() (int, int, bool) {
+				stars, trend := latestMonthStargazers.LatestWeekStars()
+				return stars, trend, renderColor
+			}()),
 			LatestMonthStarCount: formatValue(latestMonthStargazers.LatestMonthStars()),
 			ForkCount:            fmt.Sprintf("%d(%d/d)", totalForkCount, avgForkCount),
 			WatcherCount:         formatValue(repo.Watchers.TotalCount),
@@ -111,14 +121,19 @@ func Overview(accessToken string, repos ...string) []Data {
 			Issue:                fmt.Sprintf("%d/%d", openIssueCount, repo.Issues.TotalCount),
 			Pull:                 fmt.Sprintf("%d/%d", openPrCount, repo.PullRequests.TotalCount),
 			License:              formatValue(repo.LicenseInfo.Name),
-			Age:                  formatPeriod(time.Since(repo.CreatedAt.Time)),
-			LastPushedAt:         formatDuration(repo.PushedAt.Time),
-			LastUpdatedAt:        formatDuration(repo.UpdatedAt.Time),
-			LatestReleaseAt:      formatDuration(repo.LatestRelease.PublishedAt.Time),
-			ReleaseCount:         formatValue(repo.Releases.TotalCount),
-			AvgReleasePeriod:     formatPeriod(avgReleasePeriod),
-			ContributorCount:     formatValue(contributorCount),
-			Homepage:             repo.HomepageUrl.String(),
+			Age: formatPeriod(func() time.Duration {
+				if repo.CreatedAt.IsZero() {
+					return 0
+				}
+				return time.Since(repo.CreatedAt.Time)
+			}()),
+			LastPushedAt:     formatDuration(repo.PushedAt.Time),
+			LastUpdatedAt:    formatDuration(repo.UpdatedAt.Time),
+			LatestReleaseAt:  formatDuration(repo.LatestRelease.PublishedAt.Time),
+			ReleaseCount:     formatValue(repo.Releases.TotalCount),
+			AvgReleasePeriod: formatPeriod(avgReleasePeriod),
+			ContributorCount: formatValue(contributorCount),
+			Homepage:         homePage,
 		})
 
 		writer.Write(list)
@@ -146,20 +161,32 @@ func Overview(accessToken string, repos ...string) []Data {
 }
 
 func formatValue(v interface{}) string {
-	return fmt.Sprintf("%v", v)
+	ret := fmt.Sprintf("%v", v)
+	if len(ret) == 0 {
+		return "N/A"
+	}
+	return ret
 }
 
-func formatStarTrend(stars, trend int) string {
+func formatStarTrend(stars, trend int, renderColor bool) string {
 	var trendEmoji string
 	c := color.New(color.FgHiWhite)
 
 	switch {
 	case trend < 0:
 		c.Add(color.BgHiRed)
-		trendEmoji = c.Sprintf("(down)")
+		if !renderColor {
+			trendEmoji = "(down)"
+		} else {
+			trendEmoji = c.Sprintf("(down)")
+		}
 	case trend > 0:
 		c.Add(color.BgHiGreen)
-		trendEmoji = c.Sprintf("(up)")
+		if !renderColor {
+			trendEmoji = "(up)"
+		} else {
+			trendEmoji = c.Sprintf("(up)")
+		}
 	default:
 		trendEmoji = ""
 	}

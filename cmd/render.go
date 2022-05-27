@@ -27,7 +27,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"os"
+	"fmt"
 
 	"github.com/anqiansong/github-compare/pkg/stat"
 	"github.com/briandowns/spinner"
@@ -37,52 +37,97 @@ import (
 
 func render(spinner *spinner.Spinner, list ...stat.Data) error {
 	spinner.Stop()
-	var data []*viper.Viper
-	for _, e := range list {
-		v := viper.New()
-		v.SetConfigType("json")
-		d, err := json.Marshal(e)
-		if err != nil {
-			return err
-		}
-		err = v.ReadConfig(bytes.NewBuffer(d))
-		if err != nil {
-			return err
-		}
-		data = append(data, v)
+	data, err := convert2ViperList(list)
+	if err != nil {
+		return err
 	}
 
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(createRow("metrics", "fullName", data...))
-	t.AppendRows([]table.Row{
-		createRow("🏠 homepage", "homepage", data...),
-		createRow("🌎 language", "language", data...),
-		createRow("📌 license", "license", data...),
-		createRow("⏰ age", "age", data...),
-		createRow("🌟 stars", "starCount", data...),
-		createRow("📊 latestDayStarCount", "latestDayStarCount", data...),
-		createRow("📉 latestWeekStarCount", "latestWeekStarCount", data...),
-		createRow("📈 latestMonthStarCount", "latestMonthStarCount", data...),
-		createRow("👏 forks", "forkCount", data...),
-		createRow("👀 watchers", "watcherCount", data...),
-		createRow("💪 issues", "issue", data...),
-		createRow("💯 pull requests", "pull", data...),
-		createRow("👥 contributors", "contributorCount", data...),
-		createRow("🚀 releases", "releaseCount", data...),
-		createRow("🔭 release circle(avg)", "avgReleasePeriod", data...),
-		createRow("🎯 lastRelease", "latestReleaseAt", data...),
-		createRow("🕦 lastCommit", "lastPushedAt", data...),
-		createRow("📝 lastUpdate", "lastUpdatedAt", data...),
-	})
+	t := createTable(data, true)
 	t.SetStyle(table.StyleLight)
-	t.Render()
+	fmt.Println(t.Render())
 	return nil
 }
 
-func createRow(title string, field string, data ...*viper.Viper) table.Row {
+func convert2ViperList(list []stat.Data) ([]*viper.Viper, error) {
+	var data []*viper.Viper
+	for _, e := range list {
+		v, err := convert2Viper(e)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, v)
+	}
+	return data, nil
+}
+
+func createTable(data []*viper.Viper, emoji bool) table.Writer {
+	t := table.NewWriter()
+	t.AppendHeader(createRow("metrics", "fullName", false, data...))
+	t.AppendRows([]table.Row{
+		createRow("homepage", "homepage", emoji, data...),
+		createRow("language", "language", emoji, data...),
+		createRow("license", "license", emoji, data...),
+		createRow("age", "age", emoji, data...),
+		createRow("stars", "starCount", emoji, data...),
+		createRow("latestDayStarCount", "latestDayStarCount", emoji, data...),
+		createRow("latestWeekStarCount", "latestWeekStarCount", emoji, data...),
+		createRow("latestMonthStarCount", "latestMonthStarCount", emoji, data...),
+		createRow("forks", "forkCount", emoji, data...),
+		createRow("watchers", "watcherCount", emoji, data...),
+		createRow("issues", "issue", emoji, data...),
+		createRow("pull requests", "pull", emoji, data...),
+		createRow("contributors", "contributorCount", emoji, data...),
+		createRow("releases", "releaseCount", emoji, data...),
+		createRow("release circle(avg)", "avgReleasePeriod", emoji, data...),
+		createRow("lastRelease", "latestReleaseAt", emoji, data...),
+		createRow("lastCommit", "lastPushedAt", emoji, data...),
+		createRow("lastUpdate", "lastUpdatedAt", emoji, data...),
+	})
+	return t
+}
+
+func convert2Viper(e stat.Data) (*viper.Viper, error) {
+	v := viper.New()
+	v.SetConfigType("json")
+	d, err := json.Marshal(e)
+	if err != nil {
+		return nil, err
+	}
+	err = v.ReadConfig(bytes.NewBuffer(d))
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
+var emojiMap = map[string]string{
+	"homepage":             "🏠 ",
+	"language":             "🌎 ",
+	"license":              "📌 ",
+	"age":                  "⏰ ",
+	"stars":                "🌟 ",
+	"latestDayStarCount":   "📊 ",
+	"latestWeekStarCount":  "📉 ",
+	"latestMonthStarCount": "📈 ",
+	"forks":                "👏 ",
+	"watchers":             "👀 ",
+	"issues":               "💪 ",
+	"pull requests":        "💯 ",
+	"contributors":         "👥 ",
+	"releases":             "🚀 ",
+	"release circle(avg)":  "🔭 ",
+	"lastRelease":          "🎯 ",
+	"lastCommit":           "🕦 ",
+	"lastUpdate":           "📝 ",
+}
+
+func createRow(title string, field string, emoji bool, data ...*viper.Viper) table.Row {
 	ret := table.Row{title}
 	for _, e := range data {
+		title := fmt.Sprintf("%v", e.Get(field))
+		if emoji {
+			title += emojiMap[field]
+		}
 		ret = append(ret, e.Get(field))
 	}
 	return ret
