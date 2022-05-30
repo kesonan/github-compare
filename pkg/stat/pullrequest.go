@@ -23,6 +23,7 @@
 package stat
 
 import (
+	"log"
 	"time"
 
 	"github.com/anqiansong/github-compare/pkg/timex"
@@ -48,7 +49,7 @@ type (
 	}
 
 	PullRequest struct {
-		List PullRequestConnection `graphql:"pullRequests(first: $first, orderBy: $orderBy, states: $pullRequestStates)"`
+		List PullRequestConnection `graphql:"pullRequests(first: $first, orderBy: $orderBy, after: $after, states: $pullRequestStates)"`
 	}
 
 	PRQuery struct {
@@ -62,10 +63,10 @@ func (s Stat) OpenPullRequestCount() githubv4.Int {
 		"after":             (*githubv4.String)(nil),
 		"owner":             githubv4.String(s.owner),
 		"name":              githubv4.String(s.repo),
-		"first":             1,
+		"first":             githubv4.Int(1),
 		"pullRequestStates": []githubv4.PullRequestState{githubv4.PullRequestStateOpen},
-		"orderBy": githubv4.PullRequestOrder{
-			Field:     githubv4.PullRequestOrderFieldCreatedAt,
+		"orderBy": githubv4.IssueOrder{
+			Field:     githubv4.IssueOrderFieldCreatedAt,
 			Direction: githubv4.OrderDirectionDesc,
 		},
 	})
@@ -76,16 +77,15 @@ func (s Stat) OpenPullRequestCount() githubv4.Int {
 func (p PullRequestList) Chart() Chart {
 	now := time.Now()
 	var (
-		dayCount = make(map[string]int)
-		labels   []string
-		data     []float64
-		dayTime  = timex.AllDays(now, now.Add(7*24*time.Hour))
+		labels  []string
+		data    []float64
+		dayTime = timex.AllDays(now.Add(-weekDur), now)
 	)
 
 	for _, t := range dayTime {
-		label := t.Format("02/01")
+		label := t.Format(labelLayout)
 		labels = append(labels, label)
-		dayCount[label] += p.getSpecifiedDate(t)
+		data = append(data, float64(p.getSpecifiedDate(t)))
 	}
 
 	return Chart{Data: data, Labels: labels}
@@ -115,17 +115,20 @@ func (s Stat) latestWeekPRS() PullRequestList {
 		"after": (*githubv4.String)(nil),
 		"owner": githubv4.String(s.owner),
 		"name":  githubv4.String(s.repo),
-		"first": 100,
+		"first": githubv4.Int(100),
 		"pullRequestStates": []githubv4.PullRequestState{githubv4.PullRequestStateOpen,
 			githubv4.PullRequestStateClosed, githubv4.PullRequestStateMerged},
-		"orderBy": githubv4.PullRequestOrder{
-			Field:     githubv4.PullRequestOrderFieldCreatedAt,
+		"orderBy": githubv4.IssueOrder{
+			Field:     githubv4.IssueOrderFieldCreatedAt,
 			Direction: githubv4.OrderDirectionDesc,
 		},
 	}
 
 	for {
-		_ = s.graphqlClient.Query(s.ctx, &prQuery, arg)
+		err := s.graphqlClient.Query(s.ctx, &prQuery, arg)
+		if err != nil {
+			log.Fatalln(err)
+		}
 		temp := prQuery.PullRequest.List.Edges
 
 		for _, e := range temp {

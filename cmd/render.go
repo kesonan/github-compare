@@ -29,8 +29,8 @@ import (
 	"strings"
 
 	"github.com/anqiansong/github-compare/pkg/stat"
-	ui "github.com/gizak/termui/v3"
-	"github.com/gizak/termui/v3/widgets"
+	ui "github.com/dcorbe/termui-dpc"
+	"github.com/dcorbe/termui-dpc/widgets"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -52,7 +52,7 @@ func render(printStyle style, list ...stat.Data) error {
 		}
 
 		if len(data) == 1 {
-			return renderDetail(data[0])
+			return renderDetail(list[0], data[0])
 		}
 
 		t := createTable(data, true)
@@ -147,16 +147,16 @@ func createRow(title string, field string, emoji bool, data ...*viper.Viper) tab
 	return ret
 }
 
-const barWidth = 3
+// const barWidth = 3
 
-func renderDetail(data *viper.Viper) error {
+func renderDetail(st stat.Data, data *viper.Viper) error {
 	if err := ui.Init(); err != nil {
 		return err
 	}
 	defer ui.Close()
 
-	starBar := createStarBarChart(data.Get("latestMonthStargazers").(stat.Chart),
-		"Star(Latest Week)", ui.ColorRed, func() []ui.Color {
+	starBar := createBarChart(st.LatestMonthStargazers, "Star(Latest Week)", ui.ColorRed,
+		func() []ui.Color {
 			var colorList []ui.Color
 			for i := 1; i < 18; i++ {
 				colorList = append(colorList, ui.Color(i))
@@ -164,18 +164,14 @@ func renderDetail(data *viper.Viper) error {
 			return colorList
 		}()...)
 
-	forkBar := createStarBarChart(data.Get("latestWeekForks").(stat.Chart),
-		"Forks(Latest Week)", ui.ColorGreen)
-	commitBar := createStarBarChart(data.Get("latestWeekCommits").(stat.Chart),
-		"Commits(Latest Week)", ui.ColorYellow)
-	pullBar := createStarBarChart(data.Get("latestWeekPulls").(stat.Chart),
-		"Pulls(Latest Week)", ui.ColorWhite)
-	issueBar := createStarBarChart(data.Get("latestWeekIssues").(stat.Chart),
-		"Issues(Latest Week)", ui.ColorCyan)
+	forkBar := createBarChart(st.LatestWeekForks, "Forks(Latest Week)", ui.ColorGreen)
+	commitBar := createBarChart(st.LatestWeekCommits, "Commits(Latest Week)", ui.ColorYellow)
+	pullBar := createBarChart(st.LatestWeekPulls, "Pulls(Latest Week)", ui.ColorWhite)
+	issueBar := createBarChart(st.LatestWeekIssues, "Issues(Latest Week)", ui.ColorCyan)
 
 	desc := creatParagraph("About", ui.ColorYellow, func() []string {
 		return []string{
-			fmt.Sprintf("[◉ Homepage: %s](fg:green)", data.GetString("homepage")),
+			fmt.Sprintf("[◉ Homepage: %s](fg:blue)", data.GetString("homepage")),
 			fmt.Sprintf("[◉ Description: %s](fg:white)", data.GetString("description")),
 			fmt.Sprintf("◉ Tags: %s", formatTags(data.GetStringSlice("tags"))),
 		}
@@ -203,8 +199,8 @@ func renderDetail(data *viper.Viper) error {
 
 	metrics3 := creatParagraph("Metrics3", ui.ColorYellow, func() []string {
 		return []string{
-			fmt.Sprintf("[◉ Issue: %s](fg:green)", data.GetString("issue")),
-			fmt.Sprintf("[◉ Pull: %s](fg:white)", data.GetString("pull")),
+			fmt.Sprintf("[◉ Issue: %s](fg:red)", data.GetString("issue")),
+			fmt.Sprintf("[◉ Pull: %s](fg:green)", data.GetString("pull")),
 			fmt.Sprintf("[◉ License: %s](fg:yellow)", data.GetString("license")),
 			fmt.Sprintf("[◉ Language: %s](fg:cyan)", data.GetString("language")),
 		}
@@ -213,9 +209,9 @@ func renderDetail(data *viper.Viper) error {
 	metrics4 := creatParagraph("Metrics4", ui.ColorCyan, func() []string {
 		return []string{
 			fmt.Sprintf("[◉ Age: %s](fg:green)", data.GetString("age")),
-			fmt.Sprintf("[◉ LatestReleaseAt: %s](fg:white)", data.GetString("latestReleaseAt")),
-			fmt.Sprintf("[◉ LastUpdatedAt: %s](fg:yellow)", data.GetString("lastUpdatedAt")),
-			fmt.Sprintf("[◉ LastUpdatedAt: %s](fg:cyan)", data.GetString("lastUpdatedAt")),
+			fmt.Sprintf("[◉ LastRelease: %s](fg:white)", data.GetString("latestReleaseAt")),
+			fmt.Sprintf("[◉ LastPushed: %s](fg:yellow)", data.GetString("lastPushedAt")),
+			fmt.Sprintf("[◉ LastUpdated: %s](fg:cyan)", data.GetString("lastUpdatedAt")),
 		}
 	}()...)
 
@@ -256,13 +252,13 @@ func renderDetail(data *viper.Viper) error {
 	}
 }
 
-var colorString = []string{"black", "red", "green", "yellow", "blue", "magenta", "cyan"}
+var colorString = []string{"black", "red", "green", "blue", "magenta", "cyan"}
 
 func formatTags(tags []string) string {
 	var ret []string
 	for idx, e := range tags {
 		colorIndex := idx % len(colorString)
-		ret = append(ret, fmt.Sprintf("[%s](fg:white,bg: %s)", e, colorString[colorIndex]))
+		ret = append(ret, fmt.Sprintf("[%s](fg:white,bg:%s)", e, colorString[colorIndex]))
 	}
 	return strings.Join(ret, " ")
 }
@@ -271,17 +267,26 @@ func creatParagraph(title string, titleColor ui.Color, list ...string) *widgets.
 	p := widgets.NewParagraph()
 	p.Text = strings.Join(list, "\n")
 	p.Title = title
-	p.TextStyle = ui.NewStyle(titleColor)
+	p.TitleStyle = ui.NewStyle(titleColor)
 	return p
 }
 
-func createStarBarChart(data stat.Chart, title string, titleColor ui.Color,
+func createBarChart(data stat.Chart, title string, titleColor ui.Color,
 	barColors ...ui.Color) *widgets.BarChart {
+	maxVal := func() float64 {
+		var maxVal float64
+		for _, e := range data.Data {
+			if e > maxVal {
+				maxVal = e
+			}
+		}
+		return maxVal + 2
+	}
 	bar := widgets.NewBarChart()
 	bar.Title = title
 	bar.Data = data.Data
-	bar.BarWidth = barWidth
 	bar.Labels = data.Labels
+	bar.MaxVal = maxVal()
 	bar.TitleStyle = ui.NewStyle(titleColor)
 	if len(barColors) > 0 {
 		bar.BarColors = barColors

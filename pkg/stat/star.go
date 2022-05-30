@@ -53,18 +53,18 @@ type (
 )
 
 func (s StargazerEdges) Chart() Chart {
-	now := time.Now()
+
 	var (
-		dayCount = make(map[string]int)
-		labels   []string
-		data     []float64
-		dayTime  = timex.AllDays(now.Add(-30*24*time.Hour), now)
+		labels  []string
+		data    []float64
+		now     = time.Now()
+		dayTime = timex.AllDays(now.Add(-monthDur), now)
 	)
 
 	for _, t := range dayTime {
-		label := t.Format("02/01")
+		label := t.Format(labelLayout)
 		labels = append(labels, label)
-		dayCount[label] += s.getSpecifiedDate(t)
+		data = append(data, float64(s.getSpecifiedDate(t)))
 	}
 
 	return Chart{Data: data, Labels: labels}

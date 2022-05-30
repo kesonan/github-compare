@@ -5,8 +5,8 @@ go 1.18
 require (
 	github.com/briandowns/spinner v1.18.1
 	github.com/charmbracelet/lipgloss v0.5.0
+	github.com/dcorbe/termui-dpc v0.0.0-20211123094124-0fcf0887a538
 	github.com/fatih/color v1.13.0
-	github.com/gizak/termui/v3 v3.1.0
 	github.com/google/go-github/v44 v44.1.1-0.20220516192235-2d872b40760d
 	github.com/jedib0t/go-pretty/v6 v6.3.1
 	github.com/kevwan/mapreduce/v2 v2.1.1

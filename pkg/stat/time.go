@@ -22,13 +22,16 @@
 
 package stat
 
-import (
-	"testing"
-)
+import "time"
 
-func TestStat(t *testing.T) {
-	s := NewStat("zeromicro/go-zero")
-	s.latestWeekPRS()
-	// s.Repository()
-	// fmt.Println(s.ContributorCount())
-}
+const (
+	labelLayout = "02"
+
+	hour  = 1
+	day   = 24 * hour
+	month = 30 * day
+	year  = 12 * month
+
+	weekDur  = 6 * 24 * time.Hour
+	monthDur = 29 * 24 * time.Hour
+)

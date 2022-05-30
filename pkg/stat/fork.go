@@ -59,16 +59,15 @@ type (
 func (f Forks) Chart() Chart {
 	now := time.Now()
 	var (
-		dayCount = make(map[string]int)
-		labels   []string
-		data     []float64
-		dayTime  = timex.AllDays(now.Add(-7*24*time.Hour), now)
+		labels  []string
+		data    []float64
+		dayTime = timex.AllDays(now.Add(-weekDur), now)
 	)
 
 	for _, t := range dayTime {
-		label := t.Format("02/01")
+		label := t.Format(labelLayout)
 		labels = append(labels, label)
-		dayCount[label] += f.getSpecifiedDate(t)
+		data = append(data, float64(f.getSpecifiedDate(t)))
 	}
 
 	return Chart{Data: data, Labels: labels}

@@ -57,7 +57,8 @@ var (
 				printStyle = styleYAML
 			}
 
-			data, err := getData(printStyle == styleTable && len(outputFile) == 0, args...)
+			data, err := getData(printStyle == styleTable && len(outputFile) == 0 && len(args) > 1,
+				args...)
 			if err != nil {
 				return err
 			}

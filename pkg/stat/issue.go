@@ -48,7 +48,7 @@ type (
 	}
 
 	Issues struct {
-		List IssueConnection `graphql:"issues(first: $first, orderBy: $orderBy, states: $issueStates)"`
+		List IssueConnection `graphql:"issues(first: $first, orderBy: $orderBy, after: $after, states: $issueStates)"`
 	}
 
 	IssueQuery struct {
@@ -59,16 +59,15 @@ type (
 func (i IssueList) Chart() Chart {
 	now := time.Now()
 	var (
-		dayCount = make(map[string]int)
-		labels   []string
-		data     []float64
-		dayTime  = timex.AllDays(now.Add(-7*24*time.Hour), now)
+		labels  []string
+		data    []float64
+		dayTime = timex.AllDays(now.Add(-weekDur), now)
 	)
 
 	for _, t := range dayTime {
-		label := t.Format("02/01")
+		label := t.Format(labelLayout)
 		labels = append(labels, label)
-		dayCount[label] += i.getSpecifiedDate(t)
+		data = append(data, float64(i.getSpecifiedDate(t)))
 	}
 
 	return Chart{Data: data, Labels: labels}
@@ -115,7 +114,7 @@ func (s Stat) LatestWeekIssues() IssueList {
 		"after":       (*githubv4.String)(nil),
 		"owner":       githubv4.String(s.owner),
 		"name":        githubv4.String(s.repo),
-		"first":       100,
+		"first":       githubv4.Int(100),
 		"issueStates": []githubv4.IssueState{githubv4.IssueStateOpen, githubv4.IssueStateClosed},
 		"orderBy": githubv4.IssueOrder{
 			Field:     githubv4.IssueOrderFieldCreatedAt,
