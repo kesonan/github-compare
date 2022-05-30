@@ -208,8 +208,8 @@ func renderDetail(st stat.Data, data *viper.Viper) error {
 
 	metrics4 := creatParagraph("Metrics4", ui.ColorCyan, func() []string {
 		return []string{
-			fmt.Sprintf("[◉ Age: %s](fg:green)", data.GetString("age")),
-			fmt.Sprintf("[◉ LastRelease: %s](fg:white)", data.GetString("latestReleaseAt")),
+			fmt.Sprintf("[◉ Age: %s](fg:red)", data.GetString("age")),
+			fmt.Sprintf("[◉ LastRelease: %s](fg:green)", data.GetString("latestReleaseAt")),
 			fmt.Sprintf("[◉ LastPushed: %s](fg:yellow)", data.GetString("lastPushedAt")),
 			fmt.Sprintf("[◉ LastUpdated: %s](fg:cyan)", data.GetString("lastUpdatedAt")),
 		}
