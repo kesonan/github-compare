@@ -25,6 +25,7 @@ package stat
 import (
 	"time"
 
+	"github.com/anqiansong/github-compare/pkg/timex"
 	"github.com/shurcooL/githubv4"
 )
 
@@ -50,6 +51,35 @@ type (
 		Stargazer Stargazer `graphql:"repository(owner: $owner, name: $name)"`
 	}
 )
+
+func (s StargazerEdges) Chart() Chart {
+	now := time.Now()
+	var (
+		dayCount = make(map[string]int)
+		labels   []string
+		data     []float64
+		dayTime  = timex.AllDays(now.Add(-30*24*time.Hour), now)
+	)
+
+	for _, t := range dayTime {
+		label := t.Format("02/01")
+		labels = append(labels, label)
+		dayCount[label] += s.getSpecifiedDate(t)
+	}
+
+	return Chart{Data: data, Labels: labels}
+}
+
+func (s StargazerEdges) getSpecifiedDate(date time.Time) int {
+	zero := timex.Truncate(date)
+	var count int
+	for _, e := range s {
+		if timex.Truncate(e.StarredAt.Time).Equal(zero) {
+			count += 1
+		}
+	}
+	return count
+}
 
 func (s StargazerEdges) LatestDayStars() (int, int) {
 	deadlineOfToday := time.Now().Add(-time.Hour * 24)

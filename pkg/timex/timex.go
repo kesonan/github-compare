@@ -20,14 +20,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package stat
+package timex
 
-import (
-	"testing"
-)
+import "time"
 
-func TestStat(t *testing.T) {
-	s := NewStat("zeromicro/go-zero")
-	s.Repository()
-	// fmt.Println(s.ContributorCount())
+func AllDays(start, end time.Time) []time.Time {
+	startZero := Truncate(start)
+	endZero := Truncate(end)
+	var list []time.Time
+	for t := startZero; t.Before(endZero) || t.Equal(endZero); t = t.AddDate(0, 0, 1) {
+		list = append(list, t)
+	}
+	return list
+}
+
+func Truncate(t time.Time) time.Time {
+	return t.Truncate(24 * time.Hour)
 }

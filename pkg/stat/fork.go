@@ -30,33 +30,33 @@ import (
 )
 
 type (
-	IssueList []IssueEdge
+	Forks []RepositoryEdge
 
-	IssueEdge struct {
-		Cursor githubv4.String
-		Node   Issue
+	ForkRepository struct {
+		CreatedAt githubv4.DateTime
 	}
 
-	IssueConnection struct {
-		Edges      []IssueEdge
+	RepositoryEdge struct {
+		Cursor githubv4.String
+		Node   ForkRepository
+	}
+
+	RepositoryConnection struct {
+		Edges      []RepositoryEdge
 		PageInfo   PageInfo
 		TotalCount githubv4.Int
 	}
 
-	Issue struct {
-		CreatedAt githubv4.DateTime
+	Fork struct {
+		List RepositoryConnection `graphql:"forks(first: 100, orderBy: $orderBy, after: $after)"`
 	}
 
-	Issues struct {
-		List IssueConnection `graphql:"issues(first: $first, orderBy: $orderBy, states: $issueStates)"`
-	}
-
-	IssueQuery struct {
-		Issue Issues `graphql:"repository(owner: $owner, name: $name)"`
+	ForkQuery struct {
+		Forks Fork `graphql:"repository(owner: $owner, name: $name)"`
 	}
 )
 
-func (i IssueList) Chart() Chart {
+func (f Forks) Chart() Chart {
 	now := time.Now()
 	var (
 		dayCount = make(map[string]int)
@@ -68,16 +68,16 @@ func (i IssueList) Chart() Chart {
 	for _, t := range dayTime {
 		label := t.Format("02/01")
 		labels = append(labels, label)
-		dayCount[label] += i.getSpecifiedDate(t)
+		dayCount[label] += f.getSpecifiedDate(t)
 	}
 
 	return Chart{Data: data, Labels: labels}
 }
 
-func (i IssueList) getSpecifiedDate(date time.Time) int {
+func (f Forks) getSpecifiedDate(date time.Time) int {
 	zero := timex.Truncate(date)
 	var count int
-	for _, e := range i {
+	for _, e := range f {
 		if timex.Truncate(e.Node.CreatedAt.Time).Equal(zero) {
 			count += 1
 		}
@@ -85,47 +85,28 @@ func (i IssueList) getSpecifiedDate(date time.Time) int {
 	return count
 }
 
-func (s Stat) OpenIssueCount() githubv4.Int {
-	var issueQuery IssueQuery
-	_ = s.graphqlClient.Query(s.ctx, &issueQuery, map[string]interface{}{
-		"after":       (*githubv4.String)(nil),
-		"owner":       githubv4.String(s.owner),
-		"name":        githubv4.String(s.repo),
-		"first":       1,
-		"issueStates": []githubv4.IssueState{githubv4.IssueStateOpen},
-		"orderBy": githubv4.IssueOrder{
-			Field:     githubv4.IssueOrderFieldCreatedAt,
-			Direction: githubv4.OrderDirectionDesc,
-		},
-	})
-
-	return issueQuery.Issue.List.TotalCount
-}
-
-func (s Stat) LatestWeekIssues() IssueList {
+func (s Stat) latestWeekForks() Forks {
 	var (
-		list       IssueList
-		brk        bool
-		after      githubv4.String
-		issueQuery IssueQuery
+		list      Forks
+		brk       bool
+		after     githubv4.String
+		forkQuery ForkQuery
 	)
 
 	deadline := time.Now().Add(-7 * 24 * time.Hour)
 	arg := map[string]interface{}{
-		"after":       (*githubv4.String)(nil),
-		"owner":       githubv4.String(s.owner),
-		"name":        githubv4.String(s.repo),
-		"first":       100,
-		"issueStates": []githubv4.IssueState{githubv4.IssueStateOpen, githubv4.IssueStateClosed},
-		"orderBy": githubv4.IssueOrder{
-			Field:     githubv4.IssueOrderFieldCreatedAt,
+		"after": (*githubv4.String)(nil),
+		"owner": githubv4.String(s.owner),
+		"name":  githubv4.String(s.repo),
+		"orderBy": githubv4.RepositoryOrder{
+			Field:     githubv4.RepositoryOrderFieldCreatedAt,
 			Direction: githubv4.OrderDirectionDesc,
 		},
 	}
 
 	for {
-		_ = s.graphqlClient.Query(s.ctx, &issueQuery, arg)
-		temp := issueQuery.Issue.List.Edges
+		_ = s.graphqlClient.Query(s.ctx, &forkQuery, arg)
+		temp := forkQuery.Forks.List.Edges
 
 		for _, e := range temp {
 			if e.Node.CreatedAt.Time.Before(deadline) {
@@ -134,7 +115,7 @@ func (s Stat) LatestWeekIssues() IssueList {
 			}
 			list = append(list, e)
 		}
-		if brk || !(bool)(issueQuery.Issue.List.PageInfo.HasNextPage) || len(temp) == 0 {
+		if brk || !(bool)(forkQuery.Forks.List.PageInfo.HasNextPage) || len(temp) == 0 {
 			break
 		}
 

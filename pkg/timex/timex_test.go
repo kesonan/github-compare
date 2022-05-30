@@ -20,14 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package stat
+package timex
 
 import (
+	"fmt"
 	"testing"
+	"time"
 )
 
-func TestStat(t *testing.T) {
-	s := NewStat("zeromicro/go-zero")
-	s.Repository()
-	// fmt.Println(s.ContributorCount())
+func TestTimex(t *testing.T) {
+	now := time.Now().Truncate(24 * time.Hour)
+	fmt.Println(now)
 }

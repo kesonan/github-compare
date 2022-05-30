@@ -27,27 +27,57 @@ import (
 )
 
 type (
+	Label struct {
+		Name githubv4.String
+	}
+
+	LabelConnection struct {
+		Nodes []Label
+	}
+
+	Topic struct {
+		Name githubv4.String
+	}
+
+	RepositoryTopic struct {
+		Topic Topic
+	}
+
+	RepositoryTopicConnection struct {
+		Nodes []RepositoryTopic
+	}
+
 	Repository struct {
-		CreatedAt       githubv4.DateTime
-		ForkCount       githubv4.Int
-		HomepageUrl     githubv4.URI
-		Issues          IssueConnection `graphql:"issues(first: 1, states: $issueStates)"`
-		LatestRelease   Release
-		LicenseInfo     License
-		PrimaryLanguage Language
-		NameWithOwner   githubv4.String
-		PullRequests    PullRequestConnection `graphql:"pullRequests(first: 1, states: $pullRequestStates)"`
-		PushedAt        githubv4.DateTime
-		Releases        ReleaseConnection `graphql:"releases(first: 1, orderBy: $orderBy)"`
-		StargazerCount  githubv4.Int
-		UpdatedAt       githubv4.DateTime
-		Watchers        UserConnection `graphql:"watchers(first: 1)"`
+		CreatedAt        githubv4.DateTime
+		ForkCount        githubv4.Int
+		HomepageUrl      githubv4.URI
+		Issues           IssueConnection `graphql:"issues(first: 1, states: $issueStates)"`
+		LatestRelease    Release
+		LicenseInfo      License
+		PrimaryLanguage  Language
+		NameWithOwner    githubv4.String
+		PullRequests     PullRequestConnection `graphql:"pullRequests(first: 1, states: $pullRequestStates)"`
+		PushedAt         githubv4.DateTime
+		Releases         ReleaseConnection `graphql:"releases(first: 1, orderBy: $orderBy)"`
+		StargazerCount   githubv4.Int
+		UpdatedAt        githubv4.DateTime
+		Watchers         UserConnection `graphql:"watchers(first: 1)"`
+		Description      githubv4.String
+		RepositoryTopics RepositoryTopicConnection `graphql:"repositoryTopics(first: 100)"`
 	}
 
 	RepositoryQuery struct {
 		Repository Repository `graphql:"repository(owner: $owner, name: $name)"`
 	}
 )
+
+func (t RepositoryTopicConnection) List() []string {
+	var list []string
+	for _, e := range t.Nodes {
+		list = append(list, formatValue(e.Topic.Name))
+	}
+	return list
+}
 
 func (s Stat) Repository() Repository {
 	var repositoryQuery RepositoryQuery
