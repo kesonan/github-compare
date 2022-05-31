@@ -1,6 +1,10 @@
 ![banner](./resource/banner.png)
 
 # github-compare
+[![Release](https://img.shields.io/github/v/release/anqiansong/github-compare.svg?style=flat-square)](https://github.com/anqiansong/github-compare)
+[![License: MIT](https://img.shields.io/badge/License-MIT-gree.svg)](https://opensource.org/licenses/MIT)
+
+<a href="https://www.producthunt.com/posts/github-compare-2?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-github&#0045;compare&#0045;2" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=348018&theme=light" alt="github&#0045;compare - A&#0032;GitHub&#0032;repositories&#0032;statistics&#0032;cli&#0032;tool&#0032;for&#0032;the&#0032;terminal | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 A GitHub repositories statistics command-line tool for the terminal
 
