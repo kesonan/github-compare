@@ -179,7 +179,8 @@ func renderDetail(st stat.Data) error {
 	}
 	defer ui.Close()
 
-	starBar := createBarChart(st.LatestMonthStargazers, "Stars (Latest Month)", ui.ColorRed,
+	starBar := createBarChart(st.LatestMonthStargazers,
+		"Stars (Latest Month) [PRESS [Q | CTRL+C | ESC] TO QUIT]", ui.ColorRed,
 		func() []ui.Color {
 			var colorList []ui.Color
 			for i := 1; i < 18; i++ {
