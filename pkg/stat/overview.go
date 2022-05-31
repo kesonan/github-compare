@@ -65,8 +65,8 @@ type (
 	}
 
 	Chart struct {
-		Data   []float64
-		Labels []string
+		Data   []float64 `json:"data"`
+		Labels []string  `json:"labels"`
 	}
 )
 

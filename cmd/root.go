@@ -38,7 +38,7 @@ const codeFailure = 1
 var (
 	githubAccessToken string
 	jsonStyle         bool
-	tableStyle        bool
+	termUIStyle       bool
 	yamlStyle         bool
 
 	rootCmd = &cobra.Command{
@@ -50,15 +50,16 @@ var (
 				return err
 			}
 
-			printStyle := styleTable
+			printStyle := styleTermUI
 			if jsonStyle {
 				printStyle = styleJSON
 			} else if yamlStyle {
 				printStyle = styleYAML
 			}
 
-			data, err := getData(printStyle == styleTable && len(outputFile) == 0 && len(args) > 1,
-				args...)
+			// Only rendering color when print to terminal and there are more than 1 repositories
+			renderColor := printStyle == styleTermUI && len(outputFile) == 0 && len(args) > 1
+			data, err := getData(renderColor, args...)
 			if err != nil {
 				return err
 			}
@@ -83,7 +84,7 @@ func getExportType(outputFile string, printStyle style) string {
 	case "csv":
 		return exportTPCSV
 	default:
-		if printStyle != styleTable {
+		if printStyle != styleTermUI {
 			return string(printStyle)
 		}
 		return exportTPJSON
@@ -93,11 +94,11 @@ func getExportType(outputFile string, printStyle style) string {
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&githubAccessToken, "token", "t", "",
 		"github access token")
-	rootCmd.PersistentFlags().BoolVar(&tableStyle, "table", true,
-		"print with table style(default)")
+	rootCmd.PersistentFlags().BoolVar(&termUIStyle, "ui", true, "print with term ui style(default)")
 	rootCmd.PersistentFlags().BoolVar(&jsonStyle, "json", false, "print with json style")
 	rootCmd.PersistentFlags().BoolVar(&yamlStyle, "yaml", false, "print with yaml style")
 	rootCmd.PersistentFlags().StringVarP(&outputFile, "file", "f", "", "output to a specified file")
+	rootCmd.Version = version
 }
 
 func Execute() {

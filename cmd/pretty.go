@@ -25,7 +25,7 @@ package cmd
 type style string
 
 const (
-	styleJSON  style = "json"
-	styleYAML  style = "yaml"
-	styleTable style = "table"
+	styleJSON   style = "json"
+	styleYAML   style = "yaml"
+	styleTermUI style = "ui"
 )

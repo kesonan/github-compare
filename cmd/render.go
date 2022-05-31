@@ -55,7 +55,7 @@ func render(printStyle style, list ...stat.Data) error {
 			return renderDetail(list[0], data[0])
 		}
 
-		t := createTable(data, true)
+		t := createTable(data, true, false)
 		t.SetStyle(table.StyleLight)
 		prettyText = t.Render()
 	}
@@ -75,9 +75,19 @@ func convert2ViperList(list []stat.Data) ([]*viper.Viper, error) {
 	return data, nil
 }
 
-func createTable(data []*viper.Viper, emoji bool) table.Writer {
+func createTable(data []*viper.Viper, emoji bool, exportCSV bool) table.Writer {
 	t := table.NewWriter()
-	t.AppendHeader(createRow("metrics", "fullName", false, data...))
+	t.AppendHeader(createRow("name", "fullName", false, data...))
+	if exportCSV {
+		t.AppendRows([]table.Row{
+			createRow("description", "description", false, data...),
+			createRow("tags", "tags", false, data...),
+			createRow("latestMonthStargazers", "latestMonthStargazers.data", false, data...),
+			createRow("latestWeekForks", "latestWeekForks.data", false, data...),
+			createRow("latestWeekCommits", "latestWeekCommits.data", false, data...),
+			createRow("latestWeekIssues", "latestWeekIssues.data", false, data...),
+		})
+	}
 	t.AppendRows([]table.Row{
 		createRow("homepage", "homepage", emoji, data...),
 		createRow("language", "language", emoji, data...),
@@ -147,7 +157,13 @@ func createRow(title string, field string, emoji bool, data ...*viper.Viper) tab
 	return ret
 }
 
-// const barWidth = 3
+func createCSVRow(title string, field string, data ...*viper.Viper) []string {
+	ret := []string{title}
+	for _, e := range data {
+		ret = append(ret, fmt.Sprintf("%v", e.Get(field)))
+	}
+	return ret
+}
 
 func renderDetail(st stat.Data, data *viper.Viper) error {
 	if err := ui.Init(); err != nil {
