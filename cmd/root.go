@@ -33,44 +33,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const codeFailure = 1
-
 var (
 	githubAccessToken string
 	jsonStyle         bool
-	tableStyle        bool
+	termUIStyle       bool
 	yamlStyle         bool
 
 	rootCmd = &cobra.Command{
 		Use:   "github-compare",
-		Short: "A cli tool to compare two github repositories",
+		Short: rootCMDDesc,
 		Args:  cobra.RangeArgs(1, 4),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := validateGithubRepo(args...); err != nil {
-				return err
-			}
-
-			printStyle := styleTable
-			if jsonStyle {
-				printStyle = styleJSON
-			} else if yamlStyle {
-				printStyle = styleYAML
-			}
-
-			data, err := getData(printStyle == styleTable && len(outputFile) == 0, args...)
-			if err != nil {
-				return err
-			}
-
-			if len(outputFile) > 0 {
-				tp := getExportType(outputFile, printStyle)
-				return export(data, tp)
-			}
-
-			return render(printStyle, data...)
-		},
+		RunE:  run,
 	}
 )
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(codeFailure)
+	}
+}
 
 func getExportType(outputFile string, printStyle style) string {
 	ext := strings.TrimPrefix(filepath.Ext(outputFile), ".")
@@ -82,26 +63,21 @@ func getExportType(outputFile string, printStyle style) string {
 	case "csv":
 		return exportTPCSV
 	default:
-		if printStyle != styleTable {
+		if printStyle != styleTermUI {
 			return string(printStyle)
 		}
 		return exportTPJSON
 	}
 }
 
-func init() {
-	rootCmd.PersistentFlags().StringVarP(&githubAccessToken, "token", "t", "",
-		"github access token")
-	rootCmd.PersistentFlags().BoolVar(&tableStyle, "table", true,
-		"print with table style(default)")
-	rootCmd.PersistentFlags().BoolVar(&jsonStyle, "json", false, "print with json style")
-	rootCmd.PersistentFlags().BoolVar(&yamlStyle, "yaml", false, "print with yaml style")
-	rootCmd.PersistentFlags().StringVarP(&outputFile, "file", "f", "", "output to a specified file")
-}
-
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		os.Exit(codeFailure)
+func getPrintStyle() style {
+	switch {
+	case jsonStyle:
+		return styleJSON
+	case yamlStyle:
+		return styleYAML
+	default:
+		return styleTermUI
 	}
 }
 
@@ -112,4 +88,37 @@ func getData(renderColor bool, args ...string) ([]stat.Data, error) {
 	data := stat.Overview(githubAccessToken, renderColor, args...)
 	s.Stop()
 	return data, nil
+}
+
+func init() {
+	persistentFlags := rootCmd.PersistentFlags()
+	persistentFlags.StringVarP(&githubAccessToken, flagToken, flagTokenShortHand,
+		defaultEmptyString, flagTokenDesc)
+	persistentFlags.BoolVar(&termUIStyle, styleTermUI, true, flagTermUIDesc)
+	persistentFlags.BoolVar(&jsonStyle, styleJSON, false, flagJSONDesc)
+	persistentFlags.BoolVar(&yamlStyle, styleYAML, false, flagYAMLDesc)
+	persistentFlags.StringVarP(&outputFile, flagFile, flagFileShortHand, defaultEmptyString,
+		flagFileDesc)
+	rootCmd.Version = version
+}
+
+func run(_ *cobra.Command, args []string) error {
+	if err := validateGithubRepo(args...); err != nil {
+		return err
+	}
+
+	printStyle := getPrintStyle()
+	// Only rendering color when print to terminal and there are more than 1 repositories
+	renderColor := printStyle == styleTermUI && len(outputFile) == 0 && len(args) > 1
+	data, err := getData(renderColor, args...)
+	if err != nil {
+		return err
+	}
+
+	if len(outputFile) > 0 {
+		tp := getExportType(outputFile, printStyle)
+		return export(data, tp)
+	}
+
+	return render(printStyle, data...)
 }

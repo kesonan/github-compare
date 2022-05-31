@@ -32,29 +32,46 @@ import (
 	"github.com/shurcooL/githubv4"
 )
 
-type Data struct {
-	Age                  string `json:"age"`
-	AvgReleasePeriod     string `json:"avgReleasePeriod,omitempty"`
-	ContributorCount     string `json:"contributorCount,omitempty"`
-	ForkCount            string `json:"forkCount,omitempty"`
-	FullName             string `json:"fullName,omitempty"`
-	Homepage             string `json:"homepage,omitempty"`
-	Issue                string `json:"issue"`
-	Language             string `json:"language,omitempty"`
-	LastPushedAt         string `json:"lastPushedAt"`
-	LatestReleaseAt      string `json:"latestReleaseAt"`
-	LastUpdatedAt        string `json:"lastUpdatedAt"`
-	LatestDayStarCount   string `json:"latestDayStarCount"`
-	LatestMonthStarCount string `json:"latestMonthStarCount"`
-	LatestWeekStarCount  string `json:"latestWeekStarCount"`
-	License              string `json:"license,omitempty"`
-	Pull                 string `json:"pull"`
-	ReleaseCount         string `json:"releaseCount,omitempty"`
-	StarCount            string `json:"starCount,omitempty"`
-	WatcherCount         string `json:"watcherCount,omitempty"`
-}
+type (
+	Data struct {
+		Age                  string `json:"age"`
+		AvgReleasePeriod     string `json:"avgReleasePeriod,omitempty"`
+		ContributorCount     string `json:"contributorCount,omitempty"`
+		ForkCount            string `json:"forkCount,omitempty"`
+		FullName             string `json:"fullName,omitempty"`
+		Homepage             string `json:"homepage,omitempty"`
+		Issue                string `json:"issue"`
+		Language             string `json:"language,omitempty"`
+		LastPushedAt         string `json:"lastPushedAt"`
+		LatestReleaseAt      string `json:"latestReleaseAt"`
+		LastUpdatedAt        string `json:"lastUpdatedAt"`
+		LatestDayStarCount   string `json:"latestDayStarCount"`
+		LatestMonthStarCount string `json:"latestMonthStarCount"`
+		LatestWeekStarCount  string `json:"latestWeekStarCount"`
+		License              string `json:"license,omitempty"`
+		Pull                 string `json:"pull"`
+		ReleaseCount         string `json:"releaseCount,omitempty"`
+		StarCount            string `json:"starCount,omitempty"`
+		WatcherCount         string `json:"watcherCount,omitempty"`
+
+		Description           string   `json:"description,omitempty"`
+		Tags                  []string `json:"tags,omitempty"`
+		LatestMonthStargazers Chart    `json:"latestMonthStargazers"`
+
+		LatestWeekForks   Chart `json:"latestWeekForks"`
+		LatestWeekCommits Chart `json:"latestWeekCommits"`
+		LatestWeekPulls   Chart `json:"latestWeekPulls"`
+		LatestWeekIssues  Chart `json:"latestWeekIssues"`
+	}
+
+	Chart struct {
+		Data   []float64 `json:"data"`
+		Labels []string  `json:"labels"`
+	}
+)
 
 func Overview(accessToken string, renderColor bool, repos ...string) []Data {
+	getDetail := len(repos) == 1
 	reduce, _ := mapreduce.MapReduce(func(source chan<- *Stat) {
 		for _, r := range repos {
 			s := NewStat(r, accessToken)
@@ -68,7 +85,13 @@ func Overview(accessToken string, renderColor bool, repos ...string) []Data {
 			contributorCount      int
 			latestMonthStargazers StargazerEdges
 			list                  []Data
+			forkWeekChart         Chart
+			commitWeekChart       Chart
+			pullWeekChart         Chart
+			issueWeekChart        Chart
+			homePage              string
 		)
+
 		mapreduce.FinishVoid(func() {
 			repo = s.Repository()
 		}, func() {
@@ -79,20 +102,37 @@ func Overview(accessToken string, renderColor bool, repos ...string) []Data {
 			contributorCount = s.ContributorCount()
 		}, func() {
 			latestMonthStargazers = s.latestMonthStargazers()
+		}, func() {
+			if getDetail {
+				forkWeekChart = s.latestWeekForks().Chart()
+			}
+		}, func() {
+			if getDetail {
+				commitWeekChart = s.latestWeekCommits().Chart()
+			}
+		}, func() {
+			if getDetail {
+				pullWeekChart = s.latestWeekPRS().Chart()
+			}
+		}, func() {
+			if getDetail {
+				issueWeekChart = s.LatestWeekIssues().Chart()
+			}
 		})
 
-		homePage := ""
 		if repo.HomepageUrl.URL != nil {
 			homePage = repo.HomepageUrl.URL.String()
 		}
-		releaseCount := repo.Releases.TotalCount
-		totalStarCount := int(repo.StargazerCount)
-		avgStarCount := totalStarCount
-		totalForkCount := int(repo.ForkCount)
-		avgForkCount := totalForkCount
-		avgReleasePeriod := time.Duration(0)
-		ageDuration := time.Since(repo.CreatedAt.Time)
-		ageDays := int(ageDuration.Hours() / 24)
+		var (
+			totalStarCount   = int(repo.StargazerCount)
+			totalForkCount   = int(repo.ForkCount)
+			avgStarCount     = totalStarCount
+			avgForkCount     = totalForkCount
+			avgReleasePeriod = time.Duration(0)
+			releaseCount     = repo.Releases.TotalCount
+			ageDuration      = time.Since(repo.CreatedAt.Time)
+			ageDays          = int(ageDuration.Hours() / 24)
+		)
 
 		if releaseCount > 0 {
 			avgReleasePeriod = ageDuration / time.Duration(releaseCount)
@@ -134,6 +174,14 @@ func Overview(accessToken string, renderColor bool, repos ...string) []Data {
 			AvgReleasePeriod: formatPeriod(avgReleasePeriod),
 			ContributorCount: formatValue(contributorCount),
 			Homepage:         homePage,
+
+			Description:           formatValue(repo.Description),
+			Tags:                  repo.RepositoryTopics.List(),
+			LatestMonthStargazers: latestMonthStargazers.Chart(),
+			LatestWeekForks:       forkWeekChart,
+			LatestWeekCommits:     commitWeekChart,
+			LatestWeekPulls:       pullWeekChart,
+			LatestWeekIssues:      issueWeekChart,
 		})
 
 		writer.Write(list)
@@ -180,9 +228,12 @@ func formatLanguage(lang, color githubv4.String, renderColor bool) string {
 }
 
 func formatStarTrend(stars, trend int, renderColor bool) string {
-	var trendEmoji, starStr string
-	c := color.New()
-	starStr = fmt.Sprintf("%d", stars)
+	var (
+		trendEmoji string
+		c          = color.New()
+		starStr    = fmt.Sprintf("%d", stars)
+	)
+
 	switch {
 	case trend < 0:
 		if !renderColor {

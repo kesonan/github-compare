@@ -1,0 +1,168 @@
+- age: 3191 days
+  avgreleaseperiod: 199 days
+  contributorcount: "246"
+  forkcount: 2331(0/d)
+  fullname: spf13/cobra
+  homepage: https://cobra.dev
+  issue: 0/893
+  language: Go
+  lastpushedat: 15 hour(s) ago
+  latestreleaseat: 2 month(s) ago
+  lastupdatedat: 7 minute(s) ago
+  latestdaystarcount: 13 ⇈
+  latestmonthstarcount: "455"
+  latestweekstarcount: 93 ⇊
+  license: Apache License 2.0
+  pull: 56/809
+  releasecount: "16"
+  starcount: 26807(8/d)
+  watchercount: "349"
+  description: A Commander for modern Go CLI interactions
+  tags:
+    - cobra
+    - cobra-library
+    - cobra-generator
+    - posix-compliant-flags
+    - command-cobra
+    - cli-app
+    - command-line
+    - commandline
+    - command
+    - cli
+    - go
+    - golang
+    - golang-library
+    - golang-application
+    - subcommands
+    - posix
+  latestmonthstargazers:
+    data:
+      - 15
+      - 12
+      - 17
+      - 17
+      - 21
+      - 20
+      - 7
+      - 12
+      - 21
+      - 19
+      - 20
+      - 16
+      - 13
+      - 7
+      - 9
+      - 19
+      - 27
+      - 18
+      - 19
+      - 12
+      - 12
+      - 19
+      - 17
+      - 21
+      - 11
+      - 15
+      - 9
+      - 8
+      - 11
+      - 2
+    labels:
+      - "02"
+      - "03"
+      - "04"
+      - "05"
+      - "06"
+      - "07"
+      - "08"
+      - "09"
+      - "10"
+      - "11"
+      - "12"
+      - "13"
+      - "14"
+      - "15"
+      - "16"
+      - "17"
+      - "18"
+      - "19"
+      - "20"
+      - "21"
+      - "22"
+      - "23"
+      - "24"
+      - "25"
+      - "26"
+      - "27"
+      - "28"
+      - "29"
+      - "30"
+      - "31"
+  latestweekforks:
+    data:
+      - 0
+      - 1
+      - 3
+      - 0
+      - 0
+      - 3
+      - 0
+    labels:
+      - "25"
+      - "26"
+      - "27"
+      - "28"
+      - "29"
+      - "30"
+      - "31"
+  latestweekcommits:
+    data:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    labels:
+      - "25"
+      - "26"
+      - "27"
+      - "28"
+      - "29"
+      - "30"
+      - "31"
+  latestweekpulls:
+    data:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 1
+      - 0
+    labels:
+      - "25"
+      - "26"
+      - "27"
+      - "28"
+      - "29"
+      - "30"
+      - "31"
+  latestweekissues:
+    data:
+      - 1
+      - 0
+      - 1
+      - 0
+      - 0
+      - 1
+      - 0
+    labels:
+      - "25"
+      - "26"
+      - "27"
+      - "28"
+      - "29"
+      - "30"
+      - "31"

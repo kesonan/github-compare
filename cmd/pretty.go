@@ -22,10 +22,23 @@
 
 package cmd
 
-type style string
+type style = string
 
 const (
-	styleJSON  style = "json"
-	styleYAML  style = "yaml"
-	styleTable style = "table"
+	codeFailure        = 1
+	defaultEmptyString = ""
+	flagFile           = "file"
+	flagFileShortHand  = "f"
+	flagToken          = "token"
+	flagTokenShortHand = "t"
+	rootCMDDesc        = "A GitHub repositories statistics command-line tool for the terminal"
+	flagTokenDesc      = "github access token"
+	flagTermUIDesc     = "print with term ui style(default)"
+	flagJSONDesc       = "print with json style"
+	flagYAMLDesc       = "print with yaml style"
+	flagFileDesc       = "output to a specified file"
+
+	styleJSON   style = "json"
+	styleYAML   style = "yaml"
+	styleTermUI style = "ui"
 )

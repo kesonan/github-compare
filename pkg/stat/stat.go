@@ -35,13 +35,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const (
-	hour  = 1
-	day   = 24 * hour
-	month = 30 * day
-	year  = 12 * month
-)
-
 type (
 	Stat struct {
 		owner         string

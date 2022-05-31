@@ -25,6 +25,7 @@ package stat
 import (
 	"time"
 
+	"github.com/anqiansong/github-compare/pkg/timex"
 	"github.com/shurcooL/githubv4"
 )
 
@@ -51,10 +52,47 @@ type (
 	}
 )
 
+func (s StargazerEdges) Chart() Chart {
+
+	var (
+		labels  []string
+		data    []float64
+		now     = time.Now()
+		dayTime = timex.AllDays(now.Add(-monthDur), now)
+	)
+
+	for _, t := range dayTime {
+		label := t.Format(labelLayout)
+		labels = append(labels, label)
+		data = append(data, float64(s.getSpecifiedDate(t)))
+	}
+
+	return Chart{Data: data, Labels: labels}
+}
+
+func (s StargazerEdges) getSpecifiedDate(date time.Time) int {
+	var (
+		count int
+		zero  = timex.Truncate(date)
+	)
+
+	for _, e := range s {
+		if timex.Truncate(e.StarredAt.Time).Equal(zero) {
+			count += 1
+		}
+	}
+
+	return count
+}
+
 func (s StargazerEdges) LatestDayStars() (int, int) {
-	deadlineOfToday := time.Now().Add(-time.Hour * 24)
-	deadlineOfYesterday := deadlineOfToday.Add(-time.Hour * 24)
-	var starsOfToday, starsOfYesterday int
+	var (
+		starsOfToday        int
+		starsOfYesterday    int
+		deadlineOfToday     = time.Now().Add(-time.Hour * 24)
+		deadlineOfYesterday = deadlineOfToday.Add(-time.Hour * 24)
+	)
+
 	for _, e := range s {
 		if e.StarredAt.Time.After(deadlineOfToday) {
 			starsOfToday += 1
@@ -68,9 +106,13 @@ func (s StargazerEdges) LatestDayStars() (int, int) {
 }
 
 func (s StargazerEdges) LatestWeekStars() (int, int) {
-	deadlineOfLatest7Days := time.Now().Add(-7 * 24 * time.Hour)
-	deadlineOfPre7Days := deadlineOfLatest7Days.Add(-7 * 24 * time.Hour)
-	var starsOfLatest7Days, starsOfPre7Days int
+	var (
+		starsOfLatest7Days    int
+		starsOfPre7Days       int
+		deadlineOfLatest7Days = time.Now().Add(-timeWeek)
+		deadlineOfPre7Days    = deadlineOfLatest7Days.Add(-timeWeek)
+	)
+
 	for _, e := range s {
 		if e.StarredAt.Time.After(deadlineOfLatest7Days) {
 			starsOfLatest7Days += 1
@@ -89,13 +131,13 @@ func (s StargazerEdges) LatestMonthStars() int {
 
 func (s Stat) latestMonthStargazers() StargazerEdges {
 	var (
-		list           []StargazerEdge
 		brk            bool
-		after          githubv4.String
 		stargazerQuery StargazerQuery
+		list           []StargazerEdge
+		after          githubv4.String
+		deadline       = time.Now().Add(-timeMonth)
 	)
 
-	deadline := time.Now().Add(-30 * 24 * time.Hour)
 	arg := map[string]interface{}{
 		"after": (*githubv4.String)(nil),
 		"owner": githubv4.String(s.owner),

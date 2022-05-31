@@ -23,7 +23,6 @@
 package stat
 
 import (
-	"log"
 	"time"
 
 	"github.com/anqiansong/github-compare/pkg/timex"
@@ -31,50 +30,33 @@ import (
 )
 
 type (
-	PullRequestList []PullRequestEdge
+	Forks []RepositoryEdge
 
-	PullRequestNode struct {
+	ForkRepository struct {
 		CreatedAt githubv4.DateTime
 	}
 
-	PullRequestEdge struct {
+	RepositoryEdge struct {
 		Cursor githubv4.String
-		Node   PullRequestNode
+		Node   ForkRepository
 	}
 
-	PullRequestConnection struct {
-		Edges      []PullRequestEdge
+	RepositoryConnection struct {
+		Edges      []RepositoryEdge
 		PageInfo   PageInfo
 		TotalCount githubv4.Int
 	}
 
-	PullRequest struct {
-		List PullRequestConnection `graphql:"pullRequests(first: $first, orderBy: $orderBy, after: $after, states: $pullRequestStates)"`
+	Fork struct {
+		List RepositoryConnection `graphql:"forks(first: 100, orderBy: $orderBy, after: $after)"`
 	}
 
-	PRQuery struct {
-		PullRequest PullRequest `graphql:"repository(owner: $owner, name: $name)"`
+	ForkQuery struct {
+		Forks Fork `graphql:"repository(owner: $owner, name: $name)"`
 	}
 )
 
-func (s Stat) OpenPullRequestCount() githubv4.Int {
-	var prQuery PRQuery
-	_ = s.graphqlClient.Query(s.ctx, &prQuery, map[string]interface{}{
-		"after":             (*githubv4.String)(nil),
-		"owner":             githubv4.String(s.owner),
-		"name":              githubv4.String(s.repo),
-		"first":             githubv4.Int(1),
-		"pullRequestStates": []githubv4.PullRequestState{githubv4.PullRequestStateOpen},
-		"orderBy": githubv4.IssueOrder{
-			Field:     githubv4.IssueOrderFieldCreatedAt,
-			Direction: githubv4.OrderDirectionDesc,
-		},
-	})
-
-	return prQuery.PullRequest.List.TotalCount
-}
-
-func (p PullRequestList) Chart() Chart {
+func (f Forks) Chart() Chart {
 	var (
 		labels  []string
 		data    []float64
@@ -85,19 +67,19 @@ func (p PullRequestList) Chart() Chart {
 	for _, t := range dayTime {
 		label := t.Format(labelLayout)
 		labels = append(labels, label)
-		data = append(data, float64(p.getSpecifiedDate(t)))
+		data = append(data, float64(f.getSpecifiedDate(t)))
 	}
 
 	return Chart{Data: data, Labels: labels}
 }
 
-func (p PullRequestList) getSpecifiedDate(date time.Time) int {
+func (f Forks) getSpecifiedDate(date time.Time) int {
 	var (
 		count int
 		zero  = timex.Truncate(date)
 	)
 
-	for _, e := range p {
+	for _, e := range f {
 		if timex.Truncate(e.Node.CreatedAt.Time).Equal(zero) {
 			count += 1
 		}
@@ -106,35 +88,28 @@ func (p PullRequestList) getSpecifiedDate(date time.Time) int {
 	return count
 }
 
-func (s Stat) latestWeekPRS() PullRequestList {
+func (s Stat) latestWeekForks() Forks {
 	var (
-		brk      bool
-		prQuery  PRQuery
-		list     PullRequestList
-		after    githubv4.String
-		deadline = time.Now().Add(-timeWeek)
+		list      Forks
+		brk       bool
+		forkQuery ForkQuery
+		after     githubv4.String
+		deadline  = time.Now().Add(-timeWeek)
 	)
 
 	arg := map[string]interface{}{
 		"after": (*githubv4.String)(nil),
 		"owner": githubv4.String(s.owner),
 		"name":  githubv4.String(s.repo),
-		"first": githubv4.Int(100),
-		"pullRequestStates": []githubv4.PullRequestState{githubv4.PullRequestStateOpen,
-			githubv4.PullRequestStateClosed, githubv4.PullRequestStateMerged},
-		"orderBy": githubv4.IssueOrder{
-			Field:     githubv4.IssueOrderFieldCreatedAt,
+		"orderBy": githubv4.RepositoryOrder{
+			Field:     githubv4.RepositoryOrderFieldCreatedAt,
 			Direction: githubv4.OrderDirectionDesc,
 		},
 	}
 
 	for {
-		err := s.graphqlClient.Query(s.ctx, &prQuery, arg)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		temp := prQuery.PullRequest.List.Edges
+		_ = s.graphqlClient.Query(s.ctx, &forkQuery, arg)
+		temp := forkQuery.Forks.List.Edges
 		for _, e := range temp {
 			if e.Node.CreatedAt.Time.Before(deadline) {
 				brk = true
@@ -143,7 +118,7 @@ func (s Stat) latestWeekPRS() PullRequestList {
 			list = append(list, e)
 		}
 
-		if brk || !(bool)(prQuery.PullRequest.List.PageInfo.HasNextPage) || len(temp) == 0 {
+		if brk || !(bool)(forkQuery.Forks.List.PageInfo.HasNextPage) || len(temp) == 0 {
 			break
 		}
 

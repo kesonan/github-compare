@@ -20,25 +20,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package cmd
+package timex
 
-import (
-	"fmt"
-	"regexp"
-)
+import "time"
 
-const repoRegex = `(?m)^[\w-]+\/[\w-]+`
-
-func validateGithubRepo(name ...string) error {
-	re := regexp.MustCompile(repoRegex)
-	for _, e := range name {
-		all := re.FindAllString(e, -1)
-		if len(all) > 0 && all[0] == e {
-			continue
-		}
-
-		return fmt.Errorf("invalid github repo name: %s", e)
+func AllDays(start, end time.Time) []time.Time {
+	startZero := Truncate(start)
+	endZero := Truncate(end)
+	var list []time.Time
+	for t := startZero; t.Before(endZero) || t.Equal(endZero); t = t.AddDate(0, 0, 1) {
+		list = append(list, t)
 	}
+	return list
+}
 
-	return nil
+func Truncate(t time.Time) time.Time {
+	return t.Truncate(24 * time.Hour)
 }

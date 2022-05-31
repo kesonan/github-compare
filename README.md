@@ -2,7 +2,7 @@
 
 # github-compare
 
-A Command-line tool to statistics the GitHub repositories
+A GitHub repositories statistics command-line tool for the terminal
 
 ## Install
 
@@ -12,74 +12,91 @@ $ go install github.com/anqiansong/github-compare@latest
 
 ## Example
 
-### TableView
+### TermUI-View
+
+#### Single Repository
+
+```bash
+$ github-compare spf13/cobra
+```
+
+![repo-detail](./resource/repo-detail.png)
+
+#### More than one Repository
 
 ```bash
 $ github-compare spf13/cobra urfave/cli junegunn/fzf antonmedv/fx
 ```
+
 ![preview](./resource/compare-preview.png)
 
-### JSONView
+### JSON-View
 
 ```bash
 $ github-compare spf13/cobra --json                                           
 [
   {
-    "age": "3187 days",
+    "age": "3191 days",
     "avgReleasePeriod": "199 days",
     "contributorCount": "246",
-    "forkCount": "2327(0/d)",
+    "forkCount": "2331(0/d)",
     "fullName": "spf13/cobra",
     "homepage": "https://cobra.dev",
-    "issue": "107/892",
+    "issue": "0/893",
     "language": "Go",
-    "lastPushedAt": "8 hour(s) ago",
+    "lastPushedAt": "15 hour(s) ago",
     "latestReleaseAt": "2 month(s) ago",
-    "lastUpdatedAt": "1 hour(s) ago",
-    "latestDayStarCount": "14 ⇊",
-    "latestMonthStarCount": "477",
-    "latestWeekStarCount": "110 ⇈",
+    "lastUpdatedAt": "3 minute(s) ago",
+    "latestDayStarCount": "13 ⇈",
+    "latestMonthStarCount": "455",
+    "latestWeekStarCount": "93 ⇊",
     "license": "Apache License 2.0",
-    "pull": "55/808",
+    "pull": "56/809",
     "releaseCount": "16",
-    "starCount": "26774(8/d)",
-    "watcherCount": "350"
-  }
+    "starCount": "26807(8/d)",
+    "watcherCount": "349",
+    "description": "A Commander for modern Go CLI interactions",
+    ...
 ]
 ```
+For details see [cobra.json](./resource/cobra.json)
 
-### YAMLView
+### YAML-View
 
 ```bash
 $ github-compare spf13/cobra --yaml                                           
-- age: 3187 days
+- age: 3191 days
   avgreleaseperiod: 199 days
   contributorcount: "246"
-  forkcount: 2327(0/d)
+  forkcount: 2331(0/d)
   fullname: spf13/cobra
   homepage: https://cobra.dev
-  issue: 107/892
+  issue: 0/893
   language: Go
-  lastpushedat: 8 hour(s) ago
+  lastpushedat: 15 hour(s) ago
   latestreleaseat: 2 month(s) ago
-  lastupdatedat: 1 hour(s) ago
-  latestdaystarcount: 14 ⇊
-  latestmonthstarcount: "477"
-  latestweekstarcount: 110 ⇈
+  lastupdatedat: 7 minute(s) ago
+  latestdaystarcount: 13 ⇈
+  latestmonthstarcount: "455"
+  latestweekstarcount: 93 ⇊
   license: Apache License 2.0
-  pull: 55/808
+  pull: 56/809
   releasecount: "16"
-  starcount: 26774(8/d)
-  watchercount: "350"
+  starcount: 26807(8/d)
+  watchercount: "349"
+  description: A Commander for modern Go CLI interactions
+  ...
 ```
+
+For details see [cobra.yaml](./resource/cobra.yaml)
 
 ### Export as a csv file
 
 ```bash
 $ github-compare spf13/cobra urfave/cli junegunn/fzf antonmedv/fx -f data.csv
 ```
-![csv](./resource/compare-csv.png)
 
+![csv](./resource/compare-csv.png)
 
 ## Usage
 
@@ -87,9 +104,9 @@ $ github-compare spf13/cobra urfave/cli junegunn/fzf antonmedv/fx -f data.csv
 
 1. [Creating a personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 2. Set access token token
-   - Copied the access token and export to environment
-   - Or you can set the access token by passing `github-compare` argument 
-     `--token`
+    - Copied the access token and export to environment
+    - Or you can set the access token by passing `github-compare` argument
+      `--token`
 
 ### Execute
 
@@ -105,7 +122,7 @@ $ github-compare zeromicro/go-zero
 
 ```bash
 $ github-compare -h                                                    
-A cli tool to compare two github repositories
+A GitHub repositories statistics command-line tool for the terminal
 
 Usage:
   github-compare [flags]
@@ -114,8 +131,9 @@ Flags:
   -f, --file string    output to a specified file
   -h, --help           help for github-compare
       --json           print with json style
-      --table          print with table style(default) (default true)
   -t, --token string   github access token
+      --ui             print with term ui style(default) (default true)
+  -v, --version        version for github-compare
       --yaml           print with yaml style
 ```
 
@@ -123,12 +141,22 @@ Flags:
 
 1. A GitHub personal access token is required.
 2. `github-compare` accepts 1 to 4 repositories data queries.
-3. If you prefer to export the access token to environment, you must use 
+3. If you prefer to export the access token to environment, you must use
    environment key `GITHUB_ACCESS_TOKEN`
+
+## Thanks
+- [termui](https://github.com/gizak/termui)
+- [termui-dpc](https://github.com/dcorbe/termui-dpc)
+- [spinner](https://github.com/briandowns/spinner)
+- [go-github](https://github.com/google/go-github)
+- [githubv4](https://github.com/shurcooL/githubv4)
+- [mapreduce](https://github.com/kevwan/mapreduce)
+- [cobra](https://github.com/spf13/cobra)
+- [lipgloss](https://github.com/charmbracelet/lipgloss)
 
 ## Last
 
-If this repository can help you, give a star please! 
+If this repository can help you, give a star please!
 
 Thanks all!
 

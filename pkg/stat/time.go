@@ -20,25 +20,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package cmd
+package stat
 
-import (
-	"fmt"
-	"regexp"
+import "time"
+
+const (
+	labelLayout = "02"
+
+	hour  = 1
+	day   = 24 * hour
+	month = 30 * day
+	year  = 12 * month
+
+	weekDur  = 6 * timeDay
+	monthDur = 29 * timeDay
+
+	timeDay   = 24 * time.Hour
+	timeWeek  = 7 * timeDay
+	timeMonth = 30 * timeDay
 )
-
-const repoRegex = `(?m)^[\w-]+\/[\w-]+`
-
-func validateGithubRepo(name ...string) error {
-	re := regexp.MustCompile(repoRegex)
-	for _, e := range name {
-		all := re.FindAllString(e, -1)
-		if len(all) > 0 && all[0] == e {
-			continue
-		}
-
-		return fmt.Errorf("invalid github repo name: %s", e)
-	}
-
-	return nil
-}
