@@ -179,7 +179,7 @@ func renderDetail(st stat.Data) error {
 	}
 	defer ui.Close()
 
-	starBar := createBarChart(st.LatestMonthStargazers, "Star(Latest Week)", ui.ColorRed,
+	starBar := createBarChart(st.LatestMonthStargazers, "Stars (Latest Month)", ui.ColorRed,
 		func() []ui.Color {
 			var colorList []ui.Color
 			for i := 1; i < 18; i++ {
@@ -188,10 +188,10 @@ func renderDetail(st stat.Data) error {
 			return colorList
 		}()...)
 
-	forkBar := createBarChart(st.LatestWeekForks, "Forks(Latest Week)", ui.ColorGreen)
-	commitBar := createBarChart(st.LatestWeekCommits, "Commits(Latest Week)", ui.ColorYellow)
-	pullBar := createBarChart(st.LatestWeekPulls, "Pulls(Latest Week)", ui.ColorWhite)
-	issueBar := createBarChart(st.LatestWeekIssues, "Issues(Latest Week)", ui.ColorCyan)
+	forkBar := createBarChart(st.LatestWeekForks, "Forks (Latest Week)", ui.ColorGreen)
+	commitBar := createBarChart(st.LatestWeekCommits, "Commits (Latest Week)", ui.ColorYellow)
+	pullBar := createBarChart(st.LatestWeekPulls, "Pulls (Latest Week)", ui.ColorWhite)
+	issueBar := createBarChart(st.LatestWeekIssues, "Issues (Latest Week)", ui.ColorCyan)
 
 	desc := creatParagraph("About", ui.ColorYellow, func() []string {
 		return []string{

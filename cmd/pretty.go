@@ -31,7 +31,7 @@ const (
 	flagFileShortHand  = "f"
 	flagToken          = "token"
 	flagTokenShortHand = "t"
-	rootCMDDesc        = "A cli tool to compare two github repositories"
+	rootCMDDesc        = "A GitHub repositories statistics command-line tool for the terminal"
 	flagTokenDesc      = "github access token"
 	flagTermUIDesc     = "print with term ui style(default)"
 	flagJSONDesc       = "print with json style"
