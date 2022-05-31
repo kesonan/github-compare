@@ -144,6 +144,16 @@ Flags:
 3. If you prefer to export the access token to environment, you must use
    environment key `GITHUB_ACCESS_TOKEN`
 
+## Thanks
+- [termui](https://github.com/gizak/termui)
+- [termui-dpc](https://github.com/dcorbe/termui-dpc)
+- [spinner](https://github.com/briandowns/spinner)
+- [go-github](https://github.com/google/go-github)
+- [githubv4](https://github.com/shurcooL/githubv4)
+- [mapreduce](https://github.com/kevwan/mapreduce)
+- [cobra](https://github.com/spf13/cobra)
+- [lipgloss](https://github.com/charmbracelet/lipgloss)
+
 ## Last
 
 If this repository can help you, give a star please!
