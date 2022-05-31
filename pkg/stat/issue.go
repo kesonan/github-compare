@@ -57,10 +57,10 @@ type (
 )
 
 func (i IssueList) Chart() Chart {
-	now := time.Now()
 	var (
 		labels  []string
 		data    []float64
+		now     = time.Now()
 		dayTime = timex.AllDays(now.Add(-weekDur), now)
 	)
 
@@ -74,13 +74,17 @@ func (i IssueList) Chart() Chart {
 }
 
 func (i IssueList) getSpecifiedDate(date time.Time) int {
-	zero := timex.Truncate(date)
-	var count int
+	var (
+		count int
+		zero  = timex.Truncate(date)
+	)
+
 	for _, e := range i {
 		if timex.Truncate(e.Node.CreatedAt.Time).Equal(zero) {
 			count += 1
 		}
 	}
+
 	return count
 }
 
@@ -105,11 +109,11 @@ func (s Stat) LatestWeekIssues() IssueList {
 	var (
 		list       IssueList
 		brk        bool
-		after      githubv4.String
 		issueQuery IssueQuery
+		after      githubv4.String
+		deadline   = time.Now().Add(-timeWeek)
 	)
 
-	deadline := time.Now().Add(-7 * 24 * time.Hour)
 	arg := map[string]interface{}{
 		"after":       (*githubv4.String)(nil),
 		"owner":       githubv4.String(s.owner),

@@ -75,10 +75,10 @@ func (s Stat) OpenPullRequestCount() githubv4.Int {
 }
 
 func (p PullRequestList) Chart() Chart {
-	now := time.Now()
 	var (
 		labels  []string
 		data    []float64
+		now     = time.Now()
 		dayTime = timex.AllDays(now.Add(-weekDur), now)
 	)
 
@@ -92,25 +92,29 @@ func (p PullRequestList) Chart() Chart {
 }
 
 func (p PullRequestList) getSpecifiedDate(date time.Time) int {
-	zero := timex.Truncate(date)
-	var count int
+	var (
+		count int
+		zero  = timex.Truncate(date)
+	)
+
 	for _, e := range p {
 		if timex.Truncate(e.Node.CreatedAt.Time).Equal(zero) {
 			count += 1
 		}
 	}
+
 	return count
 }
 
 func (s Stat) latestWeekPRS() PullRequestList {
 	var (
-		list    PullRequestList
-		brk     bool
-		after   githubv4.String
-		prQuery PRQuery
+		brk      bool
+		prQuery  PRQuery
+		list     PullRequestList
+		after    githubv4.String
+		deadline = time.Now().Add(-timeWeek)
 	)
 
-	deadline := time.Now().Add(-7 * 24 * time.Hour)
 	arg := map[string]interface{}{
 		"after": (*githubv4.String)(nil),
 		"owner": githubv4.String(s.owner),
@@ -129,8 +133,8 @@ func (s Stat) latestWeekPRS() PullRequestList {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		temp := prQuery.PullRequest.List.Edges
 
+		temp := prQuery.PullRequest.List.Edges
 		for _, e := range temp {
 			if e.Node.CreatedAt.Time.Before(deadline) {
 				brk = true
@@ -138,6 +142,7 @@ func (s Stat) latestWeekPRS() PullRequestList {
 			}
 			list = append(list, e)
 		}
+
 		if brk || !(bool)(prQuery.PullRequest.List.PageInfo.HasNextPage) || len(temp) == 0 {
 			break
 		}

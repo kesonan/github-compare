@@ -32,6 +32,10 @@ const (
 	month = 30 * day
 	year  = 12 * month
 
-	weekDur  = 6 * 24 * time.Hour
-	monthDur = 29 * 24 * time.Hour
+	weekDur  = 6 * timeDay
+	monthDur = 29 * timeDay
+
+	timeDay   = 24 * time.Hour
+	timeWeek  = 7 * timeDay
+	timeMonth = 30 * timeDay
 )

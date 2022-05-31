@@ -36,7 +36,9 @@ func validateGithubRepo(name ...string) error {
 		if len(all) > 0 && all[0] == e {
 			continue
 		}
+
 		return fmt.Errorf("invalid github repo name: %s", e)
 	}
+
 	return nil
 }

@@ -22,9 +22,22 @@
 
 package cmd
 
-type style string
+type style = string
 
 const (
+	codeFailure        = 1
+	defaultEmptyString = ""
+	flagFile           = "file"
+	flagFileShortHand  = "f"
+	flagToken          = "token"
+	flagTokenShortHand = "t"
+	rootCMDDesc        = "A cli tool to compare two github repositories"
+	flagTokenDesc      = "github access token"
+	flagTermUIDesc     = "print with term ui style(default)"
+	flagJSONDesc       = "print with json style"
+	flagYAMLDesc       = "print with yaml style"
+	flagFileDesc       = "output to a specified file"
+
 	styleJSON   style = "json"
 	styleYAML   style = "yaml"
 	styleTermUI style = "ui"

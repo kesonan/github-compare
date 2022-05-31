@@ -27,8 +27,8 @@ import (
 )
 
 func TestStat(t *testing.T) {
-	s := NewStat("zeromicro/go-zero")
-	s.latestWeekPRS()
+	// s := NewStat("zeromicro/go-zero")
+	// s.latestWeekPRS()
 	// s.Repository()
 	// fmt.Println(s.ContributorCount())
 }

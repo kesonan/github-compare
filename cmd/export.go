@@ -51,11 +51,10 @@ func export(data []stat.Data, tp string) error {
 		marshal, _ := yaml.Marshal(data)
 		buffer.Write(marshal)
 	case exportTPCSV:
-		list, err := convert2ViperList(data)
+		t, err := createTable(data, false, true)
 		if err != nil {
 			return err
 		}
-		t := createTable(list, false, true)
 		// solve garbled characters
 		buffer.WriteString("\xEF\xBB\xBF")
 		buffer.WriteString(t.RenderCSV())

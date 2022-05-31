@@ -46,16 +46,15 @@ func render(printStyle style, list ...stat.Data) error {
 		data, _ := yaml.Marshal(list)
 		prettyText = string(data)
 	default:
-		data, err := convert2ViperList(list)
+		if len(list) == 1 {
+			return renderDetail(list[0])
+		}
+
+		t, err := createTable(list, true, false)
 		if err != nil {
 			return err
 		}
 
-		if len(data) == 1 {
-			return renderDetail(list[0], data[0])
-		}
-
-		t := createTable(data, true, false)
 		t.SetStyle(table.StyleLight)
 		prettyText = t.Render()
 	}
@@ -72,10 +71,16 @@ func convert2ViperList(list []stat.Data) ([]*viper.Viper, error) {
 		}
 		data = append(data, v)
 	}
+
 	return data, nil
 }
 
-func createTable(data []*viper.Viper, emoji bool, exportCSV bool) table.Writer {
+func createTable(list []stat.Data, emoji bool, exportCSV bool) (table.Writer, error) {
+	data, err := convert2ViperList(list)
+	if err != nil {
+		return nil, err
+	}
+
 	t := table.NewWriter()
 	t.AppendHeader(createRow("name", "fullName", false, data...))
 	if exportCSV {
@@ -108,20 +113,24 @@ func createTable(data []*viper.Viper, emoji bool, exportCSV bool) table.Writer {
 		createRow("lastCommit", "lastPushedAt", emoji, data...),
 		createRow("lastUpdate", "lastUpdatedAt", emoji, data...),
 	})
-	return t
+
+	return t, nil
 }
 
 func convert2Viper(e stat.Data) (*viper.Viper, error) {
 	v := viper.New()
 	v.SetConfigType("json")
+
 	d, err := json.Marshal(e)
 	if err != nil {
 		return nil, err
 	}
+
 	err = v.ReadConfig(bytes.NewBuffer(d))
 	if err != nil {
 		return nil, err
 	}
+
 	return v, nil
 }
 
@@ -150,22 +159,21 @@ func createRow(title string, field string, emoji bool, data ...*viper.Viper) tab
 	if emoji {
 		title = emojiMap[field] + title
 	}
+
 	ret := table.Row{title}
 	for _, e := range data {
 		ret = append(ret, e.Get(field))
 	}
+
 	return ret
 }
 
-func createCSVRow(title string, field string, data ...*viper.Viper) []string {
-	ret := []string{title}
-	for _, e := range data {
-		ret = append(ret, fmt.Sprintf("%v", e.Get(field)))
+func renderDetail(st stat.Data) error {
+	data, err := convert2Viper(st)
+	if err != nil {
+		return err
 	}
-	return ret
-}
 
-func renderDetail(st stat.Data, data *viper.Viper) error {
 	if err := ui.Init(); err != nil {
 		return err
 	}
@@ -256,7 +264,7 @@ func renderDetail(st stat.Data, data *viper.Viper) error {
 	for {
 		e := <-uiEvents
 		switch e.ID {
-		case "q", "<C-c>":
+		case "q", "<C-c>", "<Escape>":
 			ui.Clear()
 			return nil
 		case "<Resize>":
@@ -298,6 +306,7 @@ func createBarChart(data stat.Chart, title string, titleColor ui.Color,
 		}
 		return maxVal + 2
 	}
+
 	bar := widgets.NewBarChart()
 	bar.Title = title
 	bar.Data = data.Data
@@ -314,6 +323,7 @@ func createBarChart(data stat.Chart, title string, titleColor ui.Color,
 			return colorList
 		}()
 	}
+
 	bar.NumStyles = []ui.Style{ui.NewStyle(ui.ColorBlack)}
 	return bar
 }

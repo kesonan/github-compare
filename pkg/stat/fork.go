@@ -57,10 +57,10 @@ type (
 )
 
 func (f Forks) Chart() Chart {
-	now := time.Now()
 	var (
 		labels  []string
 		data    []float64
+		now     = time.Now()
 		dayTime = timex.AllDays(now.Add(-weekDur), now)
 	)
 
@@ -74,13 +74,17 @@ func (f Forks) Chart() Chart {
 }
 
 func (f Forks) getSpecifiedDate(date time.Time) int {
-	zero := timex.Truncate(date)
-	var count int
+	var (
+		count int
+		zero  = timex.Truncate(date)
+	)
+
 	for _, e := range f {
 		if timex.Truncate(e.Node.CreatedAt.Time).Equal(zero) {
 			count += 1
 		}
 	}
+
 	return count
 }
 
@@ -88,11 +92,11 @@ func (s Stat) latestWeekForks() Forks {
 	var (
 		list      Forks
 		brk       bool
-		after     githubv4.String
 		forkQuery ForkQuery
+		after     githubv4.String
+		deadline  = time.Now().Add(-timeWeek)
 	)
 
-	deadline := time.Now().Add(-7 * 24 * time.Hour)
 	arg := map[string]interface{}{
 		"after": (*githubv4.String)(nil),
 		"owner": githubv4.String(s.owner),
@@ -106,7 +110,6 @@ func (s Stat) latestWeekForks() Forks {
 	for {
 		_ = s.graphqlClient.Query(s.ctx, &forkQuery, arg)
 		temp := forkQuery.Forks.List.Edges
-
 		for _, e := range temp {
 			if e.Node.CreatedAt.Time.Before(deadline) {
 				brk = true
@@ -114,6 +117,7 @@ func (s Stat) latestWeekForks() Forks {
 			}
 			list = append(list, e)
 		}
+
 		if brk || !(bool)(forkQuery.Forks.List.PageInfo.HasNextPage) || len(temp) == 0 {
 			break
 		}

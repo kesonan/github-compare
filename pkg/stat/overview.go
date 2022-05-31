@@ -89,7 +89,9 @@ func Overview(accessToken string, renderColor bool, repos ...string) []Data {
 			commitWeekChart       Chart
 			pullWeekChart         Chart
 			issueWeekChart        Chart
+			homePage              string
 		)
+
 		mapreduce.FinishVoid(func() {
 			repo = s.Repository()
 		}, func() {
@@ -118,18 +120,19 @@ func Overview(accessToken string, renderColor bool, repos ...string) []Data {
 			}
 		})
 
-		homePage := ""
 		if repo.HomepageUrl.URL != nil {
 			homePage = repo.HomepageUrl.URL.String()
 		}
-		releaseCount := repo.Releases.TotalCount
-		totalStarCount := int(repo.StargazerCount)
-		avgStarCount := totalStarCount
-		totalForkCount := int(repo.ForkCount)
-		avgForkCount := totalForkCount
-		avgReleasePeriod := time.Duration(0)
-		ageDuration := time.Since(repo.CreatedAt.Time)
-		ageDays := int(ageDuration.Hours() / 24)
+		var (
+			totalStarCount   = int(repo.StargazerCount)
+			totalForkCount   = int(repo.ForkCount)
+			avgStarCount     = totalStarCount
+			avgForkCount     = totalForkCount
+			avgReleasePeriod = time.Duration(0)
+			releaseCount     = repo.Releases.TotalCount
+			ageDuration      = time.Since(repo.CreatedAt.Time)
+			ageDays          = int(ageDuration.Hours() / 24)
+		)
 
 		if releaseCount > 0 {
 			avgReleasePeriod = ageDuration / time.Duration(releaseCount)
@@ -225,9 +228,12 @@ func formatLanguage(lang, color githubv4.String, renderColor bool) string {
 }
 
 func formatStarTrend(stars, trend int, renderColor bool) string {
-	var trendEmoji, starStr string
-	c := color.New()
-	starStr = fmt.Sprintf("%d", stars)
+	var (
+		trendEmoji string
+		c          = color.New()
+		starStr    = fmt.Sprintf("%d", stars)
+	)
+
 	switch {
 	case trend < 0:
 		if !renderColor {

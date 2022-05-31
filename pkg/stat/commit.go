@@ -32,7 +32,6 @@ import (
 type CommitList []*github.RepositoryCommit
 
 func (c CommitList) Chart() Chart {
-
 	var (
 		labels  []string
 		data    []float64
@@ -50,30 +49,36 @@ func (c CommitList) Chart() Chart {
 }
 
 func (c CommitList) getSpecifiedDate(date time.Time) int {
-	zero := timex.Truncate(date)
-	var count int
+	var (
+		count int
+		zero  = timex.Truncate(date)
+	)
+
 	for _, e := range c {
 		commit := e.Commit
 		if commit == nil {
 			continue
 		}
+
 		committer := commit.Author
 		if committer == nil {
 			continue
 		}
+
 		if timex.Truncate(committer.GetDate()).Equal(zero) {
 			count += 1
 		}
 	}
+
 	return count
 }
 
 func (s Stat) latestWeekCommits() CommitList {
 	var (
+		page  = 1
 		list  CommitList
 		until = time.Now()
-		since = time.Now().Add(-7 * 24 * time.Hour)
-		page  = 1
+		since = time.Now().Add(-timeWeek)
 	)
 
 	for {
@@ -94,6 +99,7 @@ func (s Stat) latestWeekCommits() CommitList {
 		if page >= resp.LastPage {
 			return list
 		}
+
 		page = resp.NextPage
 	}
 }
